@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>10s Webcam Capture</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        .wrapper {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <h2>Webcam Capture (10 seconds)</h2>
+
+        <button id=Button onclick="startCapture()">Start Capture</button>
+        <p id="status">Idle</p>
+
+        <img src="{{ url_for('video_feed') }}" width="640" height="480">
+
+        <p id="suggestion"></p>
+    </div>
+
+    <script>
+        let poller = null;
+
+        function startCapture() {
+            document.getElementById("Button").disabled = true;
+            document.getElementById("status").innerText = "Capturing...";
+            fetch("/start_capture", { method: "POST" });
+
+            // 每 500ms 檢查一次狀態
+            poller = setInterval(checkStatus, 500);
+        }
+
+        function checkStatus() {
+            fetch("/status")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.state == 2) {
+                        document.getElementById("status").innerText = "generating suggestions...";
+                    }
+                    if (data.state == 3) {
+                        document.getElementById("status").innerText = "done";
+                        document.getElementById("suggestion").innerText = data.suggestion;
+                        clearInterval(poller);
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
