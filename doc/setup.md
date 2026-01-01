@@ -4,13 +4,10 @@
 (Windows)
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\activate.ps1
+.\.venv\Scripts\Activate.ps1
 # (.venv) >
-pip install mediapipe tensorflow opencv-python flask camera
+pip install -r requirements.txt
 ```
 
 ## autogen setup
-```powershell
-pip install -r requirements.txt
-enter your api key in .env file
-```
+- enter your api key in .env file
