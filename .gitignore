@@ -18,3 +18,6 @@ venv/
 .idea/
 .DS_store
 tempCodeRunnerFile.py
+
+# env variables
+.env

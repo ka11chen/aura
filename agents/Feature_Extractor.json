@@ -1,0 +1,65 @@
+{
+  "provider": "autogen_agentchat.agents.AssistantAgent",
+  "component_type": "agent",
+  "version": 1,
+  "component_version": 1,
+  "description": "An agent that provides assistance with tool use.",
+  "label": "Feature_Extractor",
+  "config": {
+    "name": "Feature_Extractor",
+    "model_client": {
+      "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+      "component_type": "model",
+      "version": 1,
+      "component_version": 1,
+      "description": "Chat completion client for OpenAI hosted models.",
+      "label": "OpenAIChatCompletionClient",
+      "config": {
+        "model": "gpt-4o-mini",
+        "api_key": "ENV_VAR"
+      }
+    },
+    "model_context": {
+      "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+      "component_type": "chat_completion_context",
+      "version": 1,
+      "component_version": 1,
+      "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+      "label": "UnboundedChatCompletionContext",
+      "config": {}
+    },
+    "description": "An agent that provides assistance with ability to use tools.",
+    "system_message": "You are an expert Biomechanics Engineer. Task: You receive raw MediaPipe coordinates (List of Dicts) from the user. You need to analyze the \"Kyphosis Severity\".Knowledge Base (The Logic you need to implement):\n\nKey Landmarks: In MediaPipe, Left Ear is index 7, Left Shoulder is 11, Left Hip is 23.\n\nThe Formula: Kyphosis is determined by the angle formed by these three points. A perfect vertical posture is close to 180 degrees. The smaller the angle, the worse the kyphosis.\n\nScoring: Create a logic where 170-180 degrees is \"Good\" (Score < 20), and anything below 150 degrees is \"Severe\" (Score > 80).\n\nOperational Rules:\n\nDO NOT calculate math in your head. You are an AI, you are bad at floating-point arithmetic.\n\nMUST WRITE CODE: You must write a Python script that parses the input JSON, calculates the vectors and angles using math library, and prints the result as a JSON string (e.g.,{\"kyphosis_angle\": 145, \"severity\": \"High\", \"description\": \"Head forward posture detected.\"}).\n\nUse the run_python_script skill to execute your code.\n\nOutput only the result JSON to the next agent. (Print it)",
+    "model_client_stream": false,
+    "reflect_on_tool_use": false,
+    "tool_call_summary_format": "{result}",
+    "metadata": {},
+    "tools": [
+      {
+        "provider": "autogen_ext.tools.code_execution.PythonCodeExecutionTool",
+        "component_type": "tool",
+        "version": 1,
+        "component_version": 1,
+        "description": "A tool that executes Python code in a local environment.",
+        "label": "Python Code Execution Tool",
+        "config": {
+          "executor": {
+            "provider": "autogen_ext.code_executors.local.LocalCommandLineCodeExecutor",
+            "component_type": "code_executor",
+            "version": 1,
+            "component_version": 1,
+            "description": "A code executor class that executes code through a local command line\n    environment.",
+            "label": "LocalCommandLineCodeExecutor",
+            "config": {
+              "timeout": 360,
+              "work_dir": ".coding",
+              "functions_module": "functions"
+            }
+          },
+          "description": "Execute Python code blocks.",
+          "name": "Python_Code_Execution_Tool"
+        }
+      }
+    ]
+  }
+}
