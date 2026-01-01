@@ -3,8 +3,9 @@ import cv2
 import time
 import os
 import threading
+import asyncio
 
-from main import main
+from _autogen import main
 from _camera import VideoCamera
 from _landmark import landmark
 
@@ -41,7 +42,7 @@ def gen(frame): # background
 
 def gen_suggestion(landmark_ret,h,w):
     global state,suggestion
-    suggestion=str(main(landmark_ret,h,w))
+    suggestion=str(asyncio.run(main(landmark_ret,h,w)))
     state=3
 
 def gen_frames():
@@ -66,7 +67,7 @@ def gen_frames():
                 state = 2
                 h, w = frame.shape[:2]
                 threading.Thread(target=gen_suggestion,args=(landmark_ret,h,w),daemon=True).start()
-                gen_suggestion(landmark_ret,h,w)
+                # gen_suggestion(landmark_ret,h,w)
 
         ret, jpeg = cv2.imencode('.jpg', frame)
         yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n")
