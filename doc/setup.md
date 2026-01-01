@@ -10,3 +10,7 @@ pip install mediapipe tensorflow opencv-python flask camera
 ```
 
 ## autogen setup
+```powershell
+pip install -r requirements.txt
+enter your api key in .env file
+```
