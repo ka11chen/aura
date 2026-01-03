@@ -8,7 +8,7 @@ class landmark(object):
         PoseLandmarker = mp.tasks.vision.PoseLandmarker
         PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
         VisionRunningMode = mp.tasks.vision.RunningMode
-        model_path='model/pose_landmarker_full.task'
+        model_path='../model/pose_landmarker_full.task'
 
         options = PoseLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=model_path),

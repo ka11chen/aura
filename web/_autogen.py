@@ -38,10 +38,10 @@ landmark_mapping = """0 - nose
     32 - right foot index"""
 
 async def main(landmark_ret, h, w):
-    feature_extractor = load_agent_from_json("agents/Feature_Extractor.json")
-    judge_steve = load_agent_from_json("agents/Judge_Steve_Jobs.json")
-    judge_trump = load_agent_from_json("agents/Judge_Donald_Trump.json")
-    score_aggregator = load_agent_from_json("agents/Score_Aggregator.json")
+    feature_extractor = load_agent_from_json("../agents/Feature_Extractor.json")
+    judge_steve = load_agent_from_json("../agents/Judge_Steve_Jobs.json")
+    judge_trump = load_agent_from_json("../agents/Judge_Donald_Trump.json")
+    score_aggregator = load_agent_from_json("../agents/Score_Aggregator.json")
 
     input_data = str(landmark_ret[3])+landmark_mapping
 
