@@ -25,8 +25,6 @@ def load_agent_from_json(path: str) -> AssistantAgent:
         api_key=os.getenv("OPENAI_API_KEY")
     )
 
-    print(os.getenv("OPENAI_API_KEY"))
-
     model_context = UnboundedChatCompletionContext()
 
     # Tools
