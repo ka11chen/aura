@@ -1,6 +1,5 @@
-assets/*
-captures/*
-web/captures/*
+assets/
+captures/
 
 # autogen
 .coding/
@@ -20,5 +19,5 @@ venv/
 .DS_store
 tempCodeRunnerFile.py
 
-# env variables
+# env variables (api keys)
 .env
