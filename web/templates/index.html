@@ -1,58 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>10s Webcam Capture</title>
+    <title>AURA</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <style>
-        .wrapper {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-        }
+        .wrapper { display: flex; align-items: center; flex-direction: column; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .results-container { display: none; width: 100%; margin-top: 20px; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .result-card { text-align: center; background: #1a1a1a; padding: 10px; border-radius: 8px; }
+        .result-card img { width: 100%; border-radius: 4px; aspect-ratio: 4/3; object-fit: contain; background: #000; }
+        .result-card h4 { margin-top: 10px; font-size: 0.9rem; color: #ccc; }
+        .control-panel { display: none; flex-direction: row; align-items: center; gap: 20px; margin-top: 20px; background: #2d2d2d; padding: 10px 20px; border-radius: 50px; }
     </style>
 </head>
-
 <body>
     <div class="wrapper">
-        <h2>Webcam Capture (10 seconds)</h2>
+        <h1 style="margin-bottom: 10px;">AURA</h1>
 
-        <button id=Button onclick="startCapture()">Start Capture</button>
-        <p id="status">Idle</p>
+        <div id="live-view">
+            <img src="{{ url_for('video_feed') }}" width="640" height="480" style="border-radius: 8px;">
+        </div>
 
-        <img src="{{ url_for('video_feed') }}" width="640" height="480">
+        <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+            <button id="Button" onclick="startCapture()">開始 10 秒分析</button>
+            <p id="status" style="margin: 0; font-weight: bold; color: #aaa;">準備就緒</p>
+        </div>
 
-        <p id="suggestion"></p>
+        <article id="suggestion-box" style="display:none; margin-top:20px; width: 100%;">
+            <header>AI Agent總評</header>
+            <p id="suggestion" style="white-space: pre-wrap;"></p>
+        </article>
+
+        <div id="control-panel" class="control-panel">
+            <button class="secondary" onclick="changeFrame(-1)">◀ 上一秒</button>
+            <span id="frame-counter" style="font-weight: bold; color: #fff; min-width: 100px; text-align: center;">Frame 0 / 0</span>
+            <button class="secondary" onclick="changeFrame(1)">下一秒 ▶</button>
+        </div>
+
+        <div id="results-gallery" class="results-container">
+            <div class="result-card"><img id="img-original" src="" alt="原始截圖"><h4>原始截圖</h4></div>
+            <div class="result-card"><img id="img-skeleton" src="" alt="骨架分析"><h4>目前姿勢</h4></div>
+            <div class="result-card"><img id="img-modified" src="" alt="建議姿勢"><h4>AI修改建議</h4></div>
+        </div>
     </div>
 
     <script>
         let poller = null;
+        let totalFrames = 0;
+        let currentFrame = 0;
 
         function startCapture() {
             document.getElementById("Button").disabled = true;
-            document.getElementById("status").innerText = "Capturing...";
+            document.getElementById("status").innerText = "捕捉影像中...";
+            document.getElementById("results-gallery").style.display = "none";
+            document.getElementById("control-panel").style.display = "none";
+            document.getElementById("suggestion-box").style.display = "none";
+            
             fetch("/start_capture", { method: "POST" });
-
-            // 每 500ms 檢查一次狀態
             poller = setInterval(checkStatus, 500);
         }
 
         function checkStatus() {
-            fetch("/status")
-                .then(res => res.json())
-                .then(data => {
-                    if (data.state == 2) {
-                        document.getElementById("status").innerText = "generating suggestions...";
-                    }
-                    if (data.state == 3) {
-                        document.getElementById("status").innerText = "done";
-                        document.getElementById("suggestion").innerText = data.suggestion;
-                        clearInterval(poller);
-                    }
-                });
+            fetch("/status").then(res => res.json()).then(data => {
+                if (data.state == 1) document.getElementById("status").innerText = "影像擷取中...";
+                if (data.state == 2) document.getElementById("status").innerText = "AI 分析中 (請稍候)...";
+                if (data.state == 3) finishAnalysis(data);
+            });
+        }
+
+        function finishAnalysis(data) {
+            clearInterval(poller);
+            document.getElementById("Button").disabled = false;
+            document.getElementById("status").innerText = "分析完成";
+
+            document.getElementById("suggestion").innerText = data.suggestion;
+            document.getElementById("suggestion-box").style.display = "block";
+
+            totalFrames = data.total_frames || 0;
+            currentFrame = 0; 
+            
+            document.getElementById("control-panel").style.display = "flex";
+            document.getElementById("results-gallery").style.display = "grid";
+            updateGallery();
+        }
+
+        function changeFrame(delta) {
+            let newFrame = currentFrame + delta;
+            if (newFrame < 0) newFrame = 0;
+            if (newFrame >= totalFrames) newFrame = totalFrames - 1;
+            if (newFrame !== currentFrame) {
+                currentFrame = newFrame;
+                updateGallery();
+            }
+        }
+
+        function updateGallery() {
+            document.getElementById("frame-counter").innerText = `Frame ${currentFrame + 1} / ${totalFrames}`;
+            let ts = new Date().getTime(); 
+            document.getElementById("img-original").src = `/result_image/original/${currentFrame}?t=${ts}`;
+            document.getElementById("img-skeleton").src = `/result_image/skeleton/${currentFrame}?t=${ts}`;
+            document.getElementById("img-modified").src = `/result_image/modified/${currentFrame}?t=${ts}`;
         }
     </script>
 </body>
-
 </html>
