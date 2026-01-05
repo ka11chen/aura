@@ -1,24 +1,65 @@
 {
-  "type": "assistant",
+  "provider": "autogen_agentchat.agents.AssistantAgent",
+  "component_type": "agent",
+  "version": 1,
+  "component_version": 1,
+  "description": "An agent that provides assistance with tool use.",
+  "label": "Feature_Extractor",
   "config": {
     "name": "Feature_Extractor",
-    "description": "A Python biomechanics engineer capable of calculating body features.",
     "model_client": {
-       "config": { "model": "gpt-4o-mini", "api_key": null }
+      "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+      "component_type": "model",
+      "version": 1,
+      "component_version": 1,
+      "description": "Chat completion client for OpenAI hosted models.",
+      "label": "OpenAIChatCompletionClient",
+      "config": {
+        "model": "gpt-4o-mini",
+        "api_key": null
+      }
     },
+    "model_context": {
+      "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+      "component_type": "chat_completion_context",
+      "version": 1,
+      "component_version": 1,
+      "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+      "label": "UnboundedChatCompletionContext",
+      "config": {}
+    },
+    "description": "An agent that provides assistance with ability to use tools.",
+    "system_message": "You are an expert Python Biomechanics Engineer. Your task is to write and execute Python scripts to analyze body language data based on user requests.\n\n## DATA SOURCE & SPECIFICATIONS\n- **File Path**: `landmarks.json` (located in the current working directory).\n- **Data Structure**: A list of frames, where each frame contains a list of 33 landmark dictionaries.\n- **Schema**: `[[{'x': float, 'y': float, 'z': float, 'visibility': float}, ... (33 landmarks)], ... (frames)]`\n- **Coordinate System**: `x` and `y` are normalized [0.0, 1.0]. `z` represents depth relative to the hips. `visibility` is a confidence score [0.0, 1.0].\n\n## MEDIAPIPE LANDMARK REFERENCE\n- **Head**: 0 (Nose), 7 (Left Ear), 8 (Right Ear)\n- **Torso**: 11 (Left Shoulder), 12 (Right Shoulder), 23 (Left Hip), 24 (Right Hip)\n- **Arms**: 13 (Left Elbow), 14 (Right Elbow), 15 (Left Wrist), 16 (Right Wrist)\n- **Legs**: 25 (Left Knee), 26 (Right Knee), 27 (Left Ankle), 28 (Right Ankle)\n\n## OPERATIONAL RULES\n1. **Mandatory Code Execution**: You must act as a code interpreter. Do not estimate values. Write Python code to load the JSON file and perform calculations.\n2. **Mathematical Precision**: Use `numpy` or `math` libraries. Calculate angles using vector dot products or `atan2`. Output angles in degrees.\n3. **Data Integrity**: Account for the `visibility` score. If a landmark's visibility is < 0.5, consider it unreliable or exclude it from the calculation.\n4. **Output Format**: Print the final results clearly as text or JSON. Do not describe the code; output the calculated metrics (e.g., 'Average Shoulder Width: 0.45', 'Max Trunk Lean: 12 degrees').",
+    "model_client_stream": false,
+    "reflect_on_tool_use": false,
+    "tool_call_summary_format": "{result}",
+    "metadata": {},
     "tools": [
       {
         "provider": "autogen_ext.tools.code_execution.PythonCodeExecutionTool",
+        "component_type": "tool",
+        "version": 1,
+        "component_version": 1,
+        "description": "A tool that executes Python code in a local environment.",
+        "label": "Python Code Execution Tool",
         "config": {
           "executor": {
+            "provider": "autogen_ext.code_executors.local.LocalCommandLineCodeExecutor",
+            "component_type": "code_executor",
+            "version": 1,
+            "component_version": 1,
+            "description": "A code executor class that executes code through a local command line\n    environment.",
+            "label": "LocalCommandLineCodeExecutor",
             "config": {
+              "timeout": 360,
               "work_dir": ".coding",
-              "timeout": 60
+              "functions_module": "functions"
             }
-          }
+          },
+          "description": "Execute Python code blocks.",
+          "name": "Python_Code_Execution_Tool"
         }
       }
-    ],
-    "system_message": "You are an expert Python Biomechanics Engineer. Your task is to write and execute Python scripts to analyze body language data based on user requests.\n\n## DATA SOURCE & SPECIFICATIONS\n- **File Path**: `landmarks.json` (located in the current working directory).\n- **Data Structure**: A list of frames, where each frame contains a list of 33 landmark dictionaries.\n- **Schema**: `[[{'x': float, 'y': float, 'z': float, 'visibility': float}, ... (33 landmarks)], ... (frames)]`\n- **Coordinate System**: `x` and `y` are normalized [0.0, 1.0]. `z` represents depth relative to the hips. `visibility` is a confidence score [0.0, 1.0].\n\n## MEDIAPIPE LANDMARK REFERENCE\n- **Head**: 0 (Nose), 7 (Left Ear), 8 (Right Ear)\n- **Torso**: 11 (Left Shoulder), 12 (Right Shoulder), 23 (Left Hip), 24 (Right Hip)\n- **Arms**: 13 (Left Elbow), 14 (Right Elbow), 15 (Left Wrist), 16 (Right Wrist)\n- **Legs**: 25 (Left Knee), 26 (Right Knee), 27 (Left Ankle), 28 (Right Ankle)\n\n## OPERATIONAL RULES\n1. **Mandatory Code Execution**: You must act as a code interpreter. Do not estimate values. Write Python code to load the JSON file and perform calculations.\n2. **Mathematical Precision**: Use `numpy` or `math` libraries. Calculate angles using vector dot products or `atan2`. Output angles in degrees.\n3. **Data Integrity**: Account for the `visibility` score. If a landmark's visibility is < 0.5, consider it unreliable or exclude it from the calculation.\n4. **Output Format**: Print the final results clearly as text or JSON. Do not describe the code; output the calculated metrics (e.g., 'Average Shoulder Width: 0.45', 'Max Trunk Lean: 12 degrees')."
+    ]
   }
 }
