@@ -8,9 +8,9 @@ from autogen_core.model_context import UnboundedChatCompletionContext
 from autogen_ext.tools.code_execution import PythonCodeExecutionTool
 from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv()
+load_dotenv(find_dotenv())
 
 def load_agent_from_json(path: str) -> AssistantAgent:
     with open(path, "r", encoding="utf-8") as f:
@@ -18,26 +18,35 @@ def load_agent_from_json(path: str) -> AssistantAgent:
 
     cfg = spec["config"]
 
-    # Model client
     model_cfg = cfg["model_client"]["config"]
+
+    api_key = model_cfg.get("api_key") or os.getenv("OPENAI_API_KEY")
+
     model_client = OpenAIChatCompletionClient(
         model=model_cfg["model"],
-        api_key=os.getenv("OPENAI_API_KEY")
+        api_key=api_key
     )
 
     model_context = UnboundedChatCompletionContext()
 
-    # Tools
     tools = []
     for tool_spec in cfg.get("tools", []):
-        if "code_execution" in tool_spec["provider"]:
-            exec_cfg = tool_spec["config"]["executor"]["config"]
+        if "code_execution" in tool_spec.get("provider", ""):
 
-            executor = LocalCommandLineCodeExecutor(
-                timeout=exec_cfg.get("timeout", 300),
-                work_dir=exec_cfg.get("work_dir", ".coding"),
-                functions_module=exec_cfg.get("functions_module")
-            )
+            tool_config = tool_spec.get("config", {})
+            executor_wrapper = tool_config.get("executor", {})
+            executor_config = executor_wrapper.get("config", {})
+
+            executor_args = {
+                "timeout": executor_config.get("timeout", 300),
+                "work_dir": executor_config.get("work_dir", ".coding"),
+            }
+
+            func_mod = executor_config.get("functions_module")
+            if func_mod:
+                executor_args["functions_module"] = func_mod
+
+            executor = LocalCommandLineCodeExecutor(**executor_args)
 
             tools.append(
                 PythonCodeExecutionTool(
@@ -45,10 +54,9 @@ def load_agent_from_json(path: str) -> AssistantAgent:
                 )
             )
 
-    # Agent
     agent = AssistantAgent(
         name=cfg["name"],
-        description=cfg.get("description"),
+        description=cfg.get("description", "A helpful AI assistant"),
         system_message=cfg["system_message"],
         model_client=model_client,
         model_context=model_context,

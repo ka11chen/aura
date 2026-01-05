@@ -1,9 +1,12 @@
 import asyncio
+
+from numpy.matlib import empty
+
 from agent_loader import load_agent_from_json
 from pipeline import run_pipeline
-from mediapipe_loader import load_image
+import json
 
-landmark_mapping = """0 - nose
+landmark_map = """0 - nose
     1 - left eye (inner)
     2 - left eye
     3 - left eye (outer)
@@ -43,14 +46,31 @@ async def main(landmark_ret, h, w):
     judge_trump = load_agent_from_json("../agents/Judge_Donald_Trump.json")
     score_aggregator = load_agent_from_json("../agents/Score_Aggregator.json")
 
-    input_data = str(landmark_ret[3])+landmark_mapping
+    if landmark_ret:
+        save_landmarks_to_file(landmark_ret[3])
 
     result = await run_pipeline(
-        feature_extractor,
+        feature_extractor=feature_extractor,
         judges=[judge_steve, judge_trump],
         aggregator=score_aggregator,
-        input_data=input_data
     )
 
-    print("\n=== FINAL RESULT ===")
     return result
+
+
+def save_landmarks_to_file(result, filename="landmarks.json"):
+    simplified_data = []
+
+    for frame in result.pose_landmarks:
+        frame_points = []
+        for p in frame:
+            frame_points.append({
+                "x": p.x,
+                "y": p.y,
+                "z": p.z,
+                "visibility": getattr(p, 'visibility', 0.0)
+            })
+        simplified_data.append(frame_points)
+
+    with open(filename, "w") as f:
+        json.dump(simplified_data, f)
