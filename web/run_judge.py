@@ -89,4 +89,4 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
             final_comment = msg.content
             break
 
-    return final_comment.replace("TERMINATE_SESSION", "").strip()
+    return final_comment

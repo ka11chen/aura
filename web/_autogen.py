@@ -18,7 +18,7 @@ async def main(landmark_ret, h, w):
 
     result = await run_pipeline(
         feature_extractor=feature_extractor,
-        judges=[judge_steve],
+        judges=[judge_steve, judge_trump],
         aggregator=score_aggregator,
     )
 
