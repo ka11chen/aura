@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from numpy.matlib import empty
 
@@ -17,7 +18,7 @@ async def main(landmark_ret, h, w):
 
     result = await run_pipeline(
         feature_extractor=feature_extractor,
-        judges=[judge_steve, judge_trump],
+        judges=[judge_steve],
         aggregator=score_aggregator,
     )
 
@@ -25,6 +26,10 @@ async def main(landmark_ret, h, w):
 
 
 def save_landmarks_to_file(result, filename="landmarks.json"):
+    work_dir = ".coding"
+
+    file_path = os.path.join(work_dir, filename)
+
     simplified_data = []
 
     for frame in result.pose_landmarks:
@@ -38,5 +43,5 @@ def save_landmarks_to_file(result, filename="landmarks.json"):
             })
         simplified_data.append(frame_points)
 
-    with open(filename, "w") as f:
+    with open(file_path, "w") as f:
         json.dump(simplified_data, f)
