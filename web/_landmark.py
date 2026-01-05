@@ -20,7 +20,7 @@ class landmark(object):
         print("del mediapipe")
         self.landmarker.close()
 
-    def gen_landmark(self,frame):
+    def get_landmark(self,frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
         ret = self.landmarker.detect(mp_image)

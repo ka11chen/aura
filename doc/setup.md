@@ -10,4 +10,4 @@ pip install -r requirements.txt
 ```
 
 ## autogen setup
-- enter your api key in .env file
+- enter your api keys in .env file
