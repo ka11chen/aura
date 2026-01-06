@@ -109,7 +109,6 @@ def start_capture():
     done_cnt = 0
     return jsonify({"status": "started"})
 
-
 @app.route("/result_image/<img_type>/<int:frame_idx>")
 def get_result_image(img_type, frame_idx):
     global landmark_dict
@@ -149,4 +148,6 @@ def get_result_image(img_type, frame_idx):
     return Response(img_encoded.tobytes(), mimetype='image/jpeg')
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,use_reloader=False)
+    mp_landmark.shutdown()
+    cap.shutdown()

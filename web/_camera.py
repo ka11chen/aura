@@ -5,7 +5,7 @@ class VideoCamera(object):
         print("start camera")
         self.video = cv2.VideoCapture(0)
 
-    def __del__(self):
+    def shutdown(self):
         print("del camera")
         self.video.release()
 

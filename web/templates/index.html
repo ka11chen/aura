@@ -57,7 +57,7 @@
             document.getElementById("suggestion-box").style.display = "none";
             
             fetch("/start_capture", { method: "POST" });
-            poller = setInterval(checkStatus, 500);
+            poller = setInterval(checkStatus, 1000);
         }
 
         function checkStatus() {

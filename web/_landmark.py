@@ -16,9 +16,10 @@ class landmark(object):
     
         self.landmarker=PoseLandmarker.create_from_options(options)
 
-    def __del__(self):
+    def shutdown(self):
         print("del mediapipe")
-        self.landmarker.close()
+        if self.landmarker:
+            self.landmarker.close()
 
     def get_landmark(self,frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
