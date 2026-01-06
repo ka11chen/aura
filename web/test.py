@@ -11,7 +11,7 @@ def test():
     frame = cv2.imread("test.jpg")
 
     for i in range(10):
-        ret = mp.gen_landmark(frame)
+        ret = mp.get_landmark(frame)
         landmark_ret.append(ret)
 
     asyncio.run(main(landmark_ret, 1920, 1080))
