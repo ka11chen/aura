@@ -11,9 +11,18 @@ options = PoseLandmarkerOptions(
     base_options=BaseOptions(model_asset_path=model_path),
     running_mode=VisionRunningMode.IMAGE)
 
-with PoseLandmarker.create_from_options(options) as landmarker:
-    # The landmarker is initialized. Use it here.
-    # ...
-    mp_image = mp.Image.create_from_file('assets/test1.jpeg')
-    pose_landmarker_result = landmarker.detect(mp_image)
-    print(pose_landmarker_result)
+def load_image(path):
+    with PoseLandmarker.create_from_options(options) as landmarker:
+        # The landmarker is initialized. Use it here.
+        # ...
+        mp_image = mp.Image.create_from_file(path)
+        pose_landmarker_result = landmarker.detect(mp_image)
+        return str(pose_landmarker_result)
+    
+if __name__ == "__main__":
+    ret=[
+    load_image("assets/img3.jpg"),
+    load_image("assets/img2.jpg"),
+    load_image("assets/img3.jpg"),
+    ]
+    print(ret)
