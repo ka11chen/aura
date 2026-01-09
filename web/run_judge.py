@@ -43,38 +43,73 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
     team = RoundRobinGroupChat(
         participants=[judge_agent, feature_extractor_agent],
         termination_condition=termination,
-        max_turns=10
+        max_turns=12
     )
 
     key_part_1 = "TERMINATE"
     key_part_2 = "SESSION"
 
     task = (
-        f"Act as {judge_agent.name}. Your objective is to conduct a professional evaluation of the speaker based on 'landmarks.json'.\n\n"
+        f"Act as {judge_agent.name}. Your objective is to conduct a professional evaluation of the user (file: 'landmarks.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
 
         "## LANDMARK ID REFERENCE\n"
         f"```\n{landmark_map}\n```\n\n"
 
+        "## DATA LOCATIONS\n"
+        "1. **User Data**: `landmarks.json` (Structure: A List of frames, where each frame has 'landmarks')\n"
+        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json`.\n\n"
+
         "## OPERATIONAL PROTOCOL (STRICT SEQUENCE)\n"
         "You must execute the following phases in order. Do not skip steps.\n\n"
 
-        "**PHASE 1: CRITERIA DEFINITION (Action: Search/Recall)**\n"
-        f"1. First, identify the key body language principles of {judge_agent.name} (e.g., 'Openness', 'Dominance', 'Minimalism').\n"
-        "2. If you have search tools, search for specific posture metrics associated with this persona. If not, rely on your core knowledge.\n"
-        "3. Decide which specific landmarks (IDs) are needed to measure these principles.\n\n"
+        "**PHASE 1: RESEARCH & METRIC DEFINITION (Action: Search & Define Logic)**\n"
+        f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.name} (e.g., 'Steve Jobs steeple hand', 'Trump accordion hands').\n"
+        "2. **DEFINE METRIC**: Select ONE high-level concept and define the **MATHEMATICAL LOGIC**.\n"
+        "   - *Example*: 'Calculate the **Angle** of the elbow (points 11-13-15).'\n"
+        "3. **SELECT**: List the specific Landmark IDs required.\n\n"
 
-        "**PHASE 2: DATA EXTRACTION COMMAND (Action: Instruct Engineer)**\n"
+        "**PHASE 2: FEATURE ENGINEERING COMMAND (Action: Instruct Engineer)**\n"
         "1. Direct the 'Feature_Extractor' to write a Python script.\n"
-        "2. **CRITICAL INSTRUCTION TO ENGINEER**: You must tell the Engineer two things:\n"
-        "   - **Structure**: The data in 'landmarks.json' is a time-series list (`List[Frame] -> List[Point] -> Dict`). Iteration over frames is required.\n"
-        "   - **Output**: The script **MUST use `print()`** to output the final calculated numbers. If nothing is printed, you cannot see the result.\n"
-        "3. **STOP** speaking immediately after giving the command. Wait for the code execution.\n\n"
+        "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Only give instructions.\n"
+        "3. **CRITICAL INSTRUCTIONS FOR THE SCRIPT**:\n"
+        "   - **Load**: Read `landmarks.json` and ALL `{judge_agent.name}*.json` files in `reference/`.\n"
+        "   - **Robustness**: The script must handle data structure variations (e.g., check if landmarks are in a list or dictionary) to avoid KeyErrors.\n"
+        "   - **Feature Function**: Implement the math defined in Phase 1 (e.g., `calculate_angle`).\n"
+        "   - **Process Data**: \n"
+        "       a. Compute the average feature value across ALL frames for the User.\n"
+        "       b. Compute the average feature value for EACH Reference file individually.\n"
+        "   - **Calculate Statistics**: \n"
+        "       a. **Reference Range**: Find `min()` and `max()` of the reference averages.\n"
+        "       b. **Reference Mean**: Find `mean()` of the reference averages.\n"
+        "   - **Output**: The script **MUST print** a JSON string:\n"
+        "     `{\"metric_name\": \"...\", \"user_value\": 88.5, \"ref_min\": 80.0, \"ref_max\": 100.0, \"ref_mean\": 90.0, \"status\": \"Inside/Outside\"}`\n"
+        "4. **STOP** speaking immediately after giving the command.\n\n"
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
-        "1. Wait until the Feature_Extractor returns the numerical output (e.g., 'Average Angle: 45.2').\n"
-        "2. Compare these numbers against your Phase 1 criteria.\n"
-        "3. Provide your final professional critique.\n"
-        f"4. ONLY THEN, output the exact keyword consisting of '{key_part_1}' and '{key_part_2}' joined by an underscore.\n\n"
+        "1. Wait for the JSON output. Compare the `user_value` against the `ref_min` and `ref_max`. Use this JUDGMENT RUBRIC:\n\n"
+
+        "   - **SEVERITY 1 (Professional Standard)**:\n"
+        "     *Condition*: The user's value falls **INSIDE** or **VERY CLOSE** to the [Min, Max] range.\n"
+        "     *Action*: Validate the user's performance. The behavior is natural.\n\n"
+
+        "   - **SEVERITY 2 (Noticeable Deviation)**:\n"
+        "     *Condition*: The user is **OUTSIDE** the reference range.\n"
+        "     *Action*: Point out the specific direction (e.g., 'Your gestures are smaller/faster/lower than the standard range').\n\n"
+
+        "   - **SEVERITY 3 (Fundamental Disconnection)**:\n"
+        "     *Condition*: The user is **FAR OUTSIDE** the range OR moving in the **OPPOSITE** direction.\n"
+        "     *Action*: Issue a critical correction. The movement is distracting or wrong.\n\n"
+
+        "2. **Final Output**: You MUST output a **Single JSON Object** containing the fields below, followed by the termination keyword.\n"
+        "   **Required JSON Structure**:\n"
+        "   ```json\n"
+        "   {\n"
+        "     \"metric_analyzed\": \"(e.g. Elbow Angle)\",\n"
+        "     \"severity\": 1,  // Integer: 1, 2, or 3\n"
+        "     \"suggestion\": \"(Write your advice here based on the data difference)\"\n"
+        "   }\n"
+        "   ```\n"
+        f"3. ONLY THEN, output the exact keyword consisting of '{key_part_1}' and '{key_part_2}' joined by an underscore.\n\n"
     )
 
     print(f"--- Running Session: {judge_agent.name} ---")

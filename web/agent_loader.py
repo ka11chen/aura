@@ -10,7 +10,17 @@ from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 
 from dotenv import load_dotenv, find_dotenv
 
+from autogen_core.models import ModelInfo
+
 load_dotenv(find_dotenv())
+
+custom_model_info = ModelInfo(
+    vision=False,
+    function_calling=True,
+    json_output=True,
+    family="gpt-4",
+    structured_output=True
+)
 
 def load_agent_from_json(path: str) -> AssistantAgent:
     with open(path, "r", encoding="utf-8") as f:
@@ -24,7 +34,8 @@ def load_agent_from_json(path: str) -> AssistantAgent:
 
     model_client = OpenAIChatCompletionClient(
         model=model_cfg["model"],
-        api_key=api_key
+        api_key=api_key,
+        model_info=custom_model_info
     )
 
     model_context = UnboundedChatCompletionContext()
