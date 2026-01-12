@@ -50,7 +50,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
     key_part_2 = "SESSION"
 
     task = (
-        f"Act as {judge_agent.name}. Your objective is to conduct a professional evaluation of the user (file: 'landmarks.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
+        f"Act as {judge_agent.label}. Your objective is to conduct a professional evaluation of the user (file: 'landmarks.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
 
         "## LANDMARK ID REFERENCE\n"
         f"```\n{landmark_map}\n```\n\n"
@@ -63,7 +63,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "You must execute the following phases in order. Do not skip steps.\n\n"
 
         "**PHASE 1: RESEARCH & METRIC DEFINITION (Action: Search & Define Logic)**\n"
-        f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.name} (e.g., 'Steve Jobs steeple hand', 'Trump accordion hands').\n"
+        f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.label} (e.g., 'Steve Jobs steeple hand', 'Trump accordion hands').\n"
         "2. **DEFINE METRIC**: Select ONE high-level concept and define the **MATHEMATICAL LOGIC**.\n"
         "   - *Example*: 'Calculate the **Angle** of the elbow (points 11-13-15).'\n"
         "3. **SELECT**: List the specific Landmark IDs required.\n\n"
@@ -72,7 +72,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "1. Direct the 'Feature_Extractor' to write a Python script.\n"
         "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Only give instructions.\n"
         "3. **CRITICAL INSTRUCTIONS FOR THE SCRIPT**:\n"
-        "   - **Load**: Read `landmarks.json` and ALL `{judge_agent.name}*.json` files in `reference/`.\n"
+        f"   - **Load**: Read `landmarks.json` and ALL `{judge_agent.name}*.json` files in `reference/`.\n"
         "   - **Robustness**: The script must handle data structure variations (e.g., check if landmarks are in a list or dictionary) to avoid KeyErrors.\n"
         "   - **Feature Function**: Implement the math defined in Phase 1 (e.g., `calculate_angle`).\n"
         "   - **Process Data**: \n"
