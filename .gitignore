@@ -21,3 +21,7 @@ tempCodeRunnerFile.py
 
 # env variables (api keys)
 .env
+
+# tools for developing agent prompt
+agents/tools/agent.in
+agents/tools/agent.out
