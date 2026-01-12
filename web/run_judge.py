@@ -86,26 +86,38 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "4. **STOP** speaking immediately after giving the command.\n\n"
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
-        "1. Wait for the JSON output. Compare the `user_value` against the `ref_min` and `ref_max`. Use this JUDGMENT RUBRIC:\n\n"
-
-        "   - **SEVERITY 1 (Professional Standard)**:\n"
-        "     *Condition*: The user's value falls **INSIDE** or **VERY CLOSE** to the [Min, Max] range.\n"
-        "     *Action*: Validate the user's performance. The behavior is natural.\n\n"
-
-        "   - **SEVERITY 2 (Noticeable Deviation)**:\n"
-        "     *Condition*: The user is **OUTSIDE** the reference range.\n"
-        "     *Action*: Point out the specific direction (e.g., 'Your gestures are smaller/faster/lower than the standard range').\n\n"
-
-        "   - **SEVERITY 3 (Fundamental Disconnection)**:\n"
-        "     *Condition*: The user is **FAR OUTSIDE** the range OR moving in the **OPPOSITE** direction.\n"
-        "     *Action*: Issue a critical correction. The movement is distracting or wrong.\n\n"
+        "1. Wait for the JSON output. Compare `user_value` against `ref_min` and `ref_max`.\n"
+        "2. Determine the `severity` score (0 to 3) using this RANGE-BASED RUBRIC:\n\n"
+        
+        "   --- JUDGMENT RUBRIC (0-3 Scale) ---\n"
+        
+        "   **SEVERITY 0 (Perfect Match / Strength)**\n"
+        "   - **Condition**: User is **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
+        "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
+        "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
+        
+        "   **SEVERITY 1 (Acceptable / Minor Polish)**\n"
+        "   - **Condition**: User is **INSIDE** the range, but located near the edges (borderline).\n"
+        "   - **Verdict**: **PASS**. The behavior is professional and natural, though there is slight room for refinement.\n"
+        "   - **Suggestion**: Affirmation with a minor tip. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more, but it works.')\n\n"
+        
+        "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
+        "   - **Condition**: User is **OUTSIDE** the range, but the distance to the edge is **LESS than 1.0x** the `range_span`.\n"
+        "     *Formula*: `dist(user, edge) < range_span`\n"
+        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
+        "   - **Suggestion**: Specific correction. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
+        
+        "   **SEVERITY 3 (Critical Failure)**\n"
+        "   - **Condition**: User is **OUTSIDE** the range, and the distance is **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
+        "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
+        "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
 
         "2. **Final Output**: You MUST output a **Single JSON Object** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "   ```json\n"
         "   {\n"
         "     \"metric_analyzed\": \"(e.g. Elbow Angle)\",\n"
-        "     \"severity\": 1,  // Integer: 1, 2, or 3\n"
+        "     \"severity\": 1,  // Integer: 0, 1, 2, or 3\n"
         "     \"suggestion\": \"(Write your advice here based on the data difference)\"\n"
         "   }\n"
         "   ```\n"

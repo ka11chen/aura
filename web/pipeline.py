@@ -27,12 +27,12 @@ async def run_pipeline(
     print("=====Judge Results=====")
     print(judge_results)
 
-    # final = await aggregator.on_messages(
-    #     [TextMessage(content=str(judge_results), source="system")],
-    #     cancellation_token=None
-    # )
-    #
-    # print("=====Final=====")
-    # print(final)
+    final = await aggregator.on_messages(
+        [TextMessage(content=str(judge_results), source="system")],
+        cancellation_token=None
+    )
+
+    print("=====Final=====")
+    print(final)
 
     return judge_results
