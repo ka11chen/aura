@@ -1,15 +1,11 @@
-import os
-
-from numpy.matlib import empty
-
 from agent_loader import load_agent_from_json
 from pipeline import run_pipeline
-import json
+from landmarks_to_json import save_landmarks_to_file
 
 judge_roster = [
     {"id": "Judge_Steve_Jobs", "target_figure": "Steve Jobs"},
     {"id": "Judge_Donald_Trump", "target_figure": "Donald Trump"},
-    {"id": "Judge_Elon_Musk", "target_figure": "Elon Musk"},
+    # {"id": "Judge_Elon_Musk", "target_figure": "Elon Musk"},
 ]
 
 async def main(landmark_ret, h, w):
@@ -22,7 +18,7 @@ async def main(landmark_ret, h, w):
         agent = load_agent_from_json("../agents/Judge.json")
 
         agent.label = judge["target_figure"]
-        agent.name = judge["id"]
+        agent._name = judge["id"]
 
         judges.append(agent)
 
@@ -36,25 +32,3 @@ async def main(landmark_ret, h, w):
     )
 
     return result
-
-
-def save_landmarks_to_file(result, filename="landmarks.json"):
-    work_dir = ".coding"
-
-    file_path = os.path.join(work_dir, filename)
-
-    simplified_data = []
-
-    for frame in result.pose_landmarks:
-        frame_points = []
-        for p in frame:
-            frame_points.append({
-                "x": p.x,
-                "y": p.y,
-                "z": p.z,
-                "visibility": getattr(p, 'visibility', 0.0)
-            })
-        simplified_data.append(frame_points)
-
-    with open(file_path, "w") as f:
-        json.dump(simplified_data, f)

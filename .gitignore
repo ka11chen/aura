@@ -28,3 +28,4 @@ agents/tools/agent.out
 
 # test
 web/test*
+image_to_landmarks.py
