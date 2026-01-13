@@ -26,7 +26,7 @@ image_cnt = 0
 done_cnt = 0
 
 landmark_dict = {}
-suggestion = ''
+suggestion = []
 
 SAVE_DIR = "captures"
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -50,10 +50,26 @@ def gen_suggestion(h, w):
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
     
     try:
-        suggestion = str(asyncio.run(main(landmark_list, h, w)))
+        raw_result = asyncio.run(main(landmark_list, h, w))
+        # Convert dictionary of results to flat list for frontend
+        formatted_suggestions = []
+        if isinstance(raw_result, dict):
+            for judge_id, judge_data in raw_result.items():
+                if isinstance(judge_data, dict):
+                    # Ensure judge name is present (fallback to ID if not in dict)
+                    if 'judge' not in judge_data:
+                        judge_data['judge'] = judge_id
+                    formatted_suggestions.append(judge_data)
+        suggestion = formatted_suggestions
+            
     except Exception as e:
         print(f"gen_suggestion Error: {e}")
-        suggestion = "後端分析發生錯誤，請檢查後端日誌。"
+        suggestion = [{
+            "judge": "System",
+            "suggestion": "System Error",
+            "severity": 1.0,
+            "description": "後端分析發生錯誤，請檢查後端日誌。"
+        }]
         
     state = 3
 
@@ -102,7 +118,7 @@ def start_capture():
     global state, start_time, last_saved_time, image_cnt, landmark_dict, done_cnt, suggestion
     landmark_dict.clear()
     state = 1
-    suggestion = ''
+    suggestion = []
     start_time = time.time()
     last_saved_time = start_time - SAVE_INTERVAL
     image_cnt = 0

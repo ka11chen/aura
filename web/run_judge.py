@@ -87,38 +87,35 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
         "1. Wait for the JSON output. Compare `user_value` against `ref_min` and `ref_max`.\n"
-        "2. Determine the `severity` score (0 to 3) using this RANGE-BASED RUBRIC:\n\n"
+        "2. Determine the `severity` score (0.0 to 1.0) using this RANGE-BASED RUBRIC:\n\n"
         
-        "   --- JUDGMENT RUBRIC (0-3 Scale) ---\n"
+        "   --- JUDGMENT RUBRIC (0.0-1.0 Scale) ---\n"
         
-        "   **SEVERITY 0 (Perfect Match / Strength)**\n"
+        "   **SEVERITY 0.0 - 0.2 (Perfect Match / Strength)**\n"
         "   - **Condition**: User is **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
-        "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
-        "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
+        "   - **Verdict**: This is a **STRENGTH**.\n\n"
         
-        "   **SEVERITY 1 (Acceptable / Minor Polish)**\n"
+        "   **SEVERITY 0.3 - 0.5 (Acceptable / Minor Polish)**\n"
         "   - **Condition**: User is **INSIDE** the range, but located near the edges (borderline).\n"
-        "   - **Verdict**: **PASS**. The behavior is professional and natural, though there is slight room for refinement.\n"
-        "   - **Suggestion**: Affirmation with a minor tip. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more, but it works.')\n\n"
+        "   - **Verdict**: **PASS**.\n\n"
         
-        "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
+        "   **SEVERITY 0.6 - 0.8 (Noticeable Deviation / Warning)**\n"
         "   - **Condition**: User is **OUTSIDE** the range, but the distance to the edge is **LESS than 1.0x** the `range_span`.\n"
         "     *Formula*: `dist(user, edge) < range_span`\n"
-        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
-        "   - **Suggestion**: Specific correction. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
+        "   - **Verdict**: **WARNING**.\n\n"
         
-        "   **SEVERITY 3 (Critical Failure)**\n"
+        "   **SEVERITY 0.9 - 1.0 (Critical Failure)**\n"
         "   - **Condition**: User is **OUTSIDE** the range, and the distance is **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
-        "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
-        "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
+        "   - **Verdict**: **CRITICAL**.\n\n"
 
         "2. **Final Output**: You MUST output a **Single JSON Object** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "   ```json\n"
         "   {\n"
-        "     \"metric_analyzed\": \"(e.g. Elbow Angle)\",\n"
-        "     \"severity\": 1,  // Integer: 0, 1, 2, or 3\n"
-        "     \"suggestion\": \"(Write your advice here based on the data difference)\"\n"
+        "     \"suggestion\": \"(Short title/headline of the advice, e.g. 'Good Hand Posture')\",\n"
+        "     \"severity\": 0.1,  // Float between 0.0 (Good) and 1.0 (Critical)\n"
+        "     \"description\": \"(Full explanation and professional advice based on the data)\",\n"
+        "     \"judge\": \"" + judge_agent.label + "\" // The Name of the Judge\n"
         "   }\n"
         "   ```\n"
         f"3. ONLY THEN, output the exact keyword consisting of '{key_part_1}' and '{key_part_2}' joined by an underscore.\n\n"
@@ -135,5 +132,30 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         if isinstance(msg, TextMessage) and msg.source == judge_agent.name:
             final_comment = msg.content
             break
+            
+    return extract_json_from_text(final_comment)
 
-    return final_comment
+def extract_json_from_text(text):
+    import json
+    import re
+    
+    # Try to find JSON block
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if match:
+        json_str = match.group(0)
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            pass
+            
+    # Fallback: try to parse the whole text if it's clean enough
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Return a fallback error object if parsing fails
+        return {
+            "suggestion": "Analysis Failed",
+            "severity": 1.0,
+            "description": f"Failed to parse AI response. Raw output: {text[:50]}...",
+            "judge": "System Error"
+        }
