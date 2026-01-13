@@ -2,7 +2,7 @@ assets/
 captures/
 
 # autogen
-.coding/
+web/.coding/tmp_code_*
 
 # py
 __pycache__/
