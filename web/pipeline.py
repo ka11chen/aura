@@ -27,20 +27,20 @@ async def run_pipeline(
 
     judge_results = dict(results_list)
 
-    # final = await aggregator.on_messages(
-    #     [TextMessage(content=str(judge_results), source="system")],
-    #     cancellation_token=None
-    # )
+    final = await aggregator.on_messages(
+        [TextMessage(content=str(judge_results), source="system")],
+        cancellation_token=None
+    )
+
+    print("=====Final=====")
+    print(final)
+
+    # formatted_output = parse_judgement_results(judge_results)
     #
-    # print("=====Final=====")
-    # print(final)
+    # print("=====Results=====")
+    # print(formatted_output)
 
-    formatted_output = parse_judgement_results(judge_results)
-
-    print("=====Results=====")
-    print(formatted_output)
-
-    return judge_results
+    return final
 
 def parse_judgement_results(raw_data):
     formatted_output = []
