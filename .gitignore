@@ -3,6 +3,7 @@ captures/
 
 # autogen
 web/.coding/tmp_code_*
+web/.coding/landmarks.json
 
 # py
 __pycache__/
