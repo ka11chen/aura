@@ -27,13 +27,7 @@ async def run_pipeline(
 
     judge_results = dict(results_list)
 
-    # final = await aggregator.on_messages(
-    #     [TextMessage(content=str(judge_results), source="system")],
-    #     cancellation_token=None
-    # )
-    #
-    # print("=====Final=====")
-    # print(final)
+    judge_results = dict(results_list)
 
     formatted_output = parse_judgement_results(judge_results)
 
