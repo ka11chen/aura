@@ -59,7 +59,14 @@ async def run_pipeline(
     print("=====Results=====")
     print(formatted_output)
 
-    return parsed_results
+    final = await aggregator.on_messages(
+        [TextMessage(content=str(formatted_output), source="system")],
+        cancellation_token=None
+    )
+
+    print(final)
+
+    return final
 
 def extract_json_legacy(text):
     if not isinstance(text, str): return text
@@ -73,6 +80,3 @@ def extract_json_legacy(text):
         return json.loads(text)
     except:
         return None
-
-def parse_judgement_results(raw_data):
-    return []
