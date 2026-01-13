@@ -64,7 +64,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
 
         "**PHASE 1: RESEARCH & METRIC DEFINITION (Action: Search & Define Logic)**\n"
         f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.label} (e.g., 'Steve Jobs steeple hand', 'Trump accordion hands').\n"
-        "2. **DEFINE METRIC**: Select ONE high-level concept and define the **MATHEMATICAL LOGIC**.\n"
+        "2. **DEFINE METRIC**: Select THREE high-level concept and define the **MATHEMATICAL LOGIC**.\n"
         "   - *Example*: 'Calculate the **Angle** of the elbow (points 11-13-15).'\n"
         "3. **SELECT**: List the specific Landmark IDs required.\n\n"
 
@@ -112,7 +112,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
         "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
 
-        "2. **Final Output**: You MUST output a **Single JSON Object** containing the fields below, followed by the termination keyword.\n"
+        "2. **Final Output**: You MUST output **Three JSON Objects** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "   ```json\n"
         "   {\n"

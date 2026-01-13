@@ -27,40 +27,11 @@ async def run_pipeline(
 
     judge_results = dict(results_list)
 
-    parsed_results = {}
-    
-    for judge_id, raw_val in judge_results.items():
-        parsed = None
-        
-        try:
-            if isinstance(raw_val, dict):
-                parsed = raw_val
-            else:
-                parsed = extract_json_legacy(raw_val)
-        except Exception:
-            pass
-            
-        if parsed:
-            if 'judge' not in parsed:
-                 clean_name = judge_id.replace("Judge_", "").replace("_", " ")
-                 parsed['judge'] = clean_name
-            
-            parsed_results[judge_id] = parsed
-        else:
-            parsed_results[judge_id] = {
-                "metric_analyzed": "Error",
-                "severity": 3,
-                "suggestion": "Failed to parse analysis result.",
-                "judge": judge_id
-            }
-
-    formatted_output = list(parsed_results.values())
-
     print("=====Results=====")
-    print(formatted_output)
+    print(judge_results)
 
     final = await aggregator.on_messages(
-        [TextMessage(content=str(formatted_output), source="system")],
+        [TextMessage(content=str(judge_results), source="system")],
         cancellation_token=None
     )
 
