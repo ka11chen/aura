@@ -6,10 +6,13 @@ import threading
 import asyncio
 import numpy as np
 
+import json
 from _autogen import main
 from _camera import VideoCamera
 from _landmark import landmark
 from _skeleton import *
+
+PREFERENCE_FILE = "user_preferences.json"
 
 app = Flask(__name__)
 
@@ -60,6 +63,34 @@ def gen_suggestion(h, w):
                     if 'judge' not in judge_data:
                         judge_data['judge'] = judge_id
                     formatted_suggestions.append(judge_data)
+        
+        # Apply Sorting based on Preferences
+        try:
+            if os.path.exists(PREFERENCE_FILE):
+                with open(PREFERENCE_FILE, 'r') as f:
+                    prefs = json.load(f)
+                    # prefs is expected to be a list of identifying strings (e.g. judge names or suggestion titles)
+                    # We assign a priority index: 0 is highest.
+                    # Use a map for O(1) lookup
+                    pref_map = {key: i for i, key in enumerate(prefs)}
+                    
+                    # Sort function: Known items by index, Unknown items at the end
+                    def get_sort_key(item):
+                        # Try to match by Judge Name first, then Title ??
+                        # User requirement: "sort suggestion sequence... next time based on *this* suggestion label importance"
+                        # So we should probably match 'suggestion' (title) or 'judge'.
+                        # Let's try matching 'judge' first as it's more stable for categorizing? 
+                        # Or generic 'suggestion' text? If suggestions change every time, sorting by exact title is brittle.
+                        # But sorting by Judge is stable. Let's assume user sorts by Importance of the Insight.
+                        # Maybe we match Judge ID? 
+                        # Let's save the 'judge' field in preferences.
+                        key = item.get('judge', '')
+                        return pref_map.get(key, 9999)
+
+                    formatted_suggestions.sort(key=get_sort_key)
+        except Exception as e:
+            print(f"Sorting Error: {e}")
+
         suggestion = formatted_suggestions
             
     except Exception as e:
@@ -112,6 +143,22 @@ def status():
         "suggestion": suggestion,
         "total_frames": len(landmark_dict)
     }
+
+@app.route("/update_preferences", methods=["POST"])
+def update_preferences():
+    from flask import request
+    try:
+        data = request.json
+        # Expecting data to be a list of strings (Judge Names / IDs) in order of importance
+        if not isinstance(data, list):
+            return jsonify({"status": "error", "message": "Invalid format"}), 400
+            
+        with open(PREFERENCE_FILE, 'w') as f:
+            json.dump(data, f)
+            
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/start_capture", methods=["POST"])
 def start_capture():

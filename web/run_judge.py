@@ -56,8 +56,8 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         f"```\n{landmark_map}\n```\n\n"
 
         "## DATA LOCATIONS\n"
-        "1. **User Data**: `landmarks.json` (Structure: A List of frames, where each frame has 'landmarks')\n"
-        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json`.\n\n"
+        "1. **User Data**: `landmarks.json` (Structure: A List of frames (`[...]`), where each frame is a LIST of landmark objects (`[{'x':..., 'y':..., 'z':...}, ...]`). DIRECTLY ACCESSIBLE, NO 'landmarks' key.)\n"
+        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json` (SAME Structure).\n\n"
 
         "## OPERATIONAL PROTOCOL (STRICT SEQUENCE)\n"
         "You must execute the following phases in order. Do not skip steps.\n\n"
@@ -138,24 +138,62 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
 def extract_json_from_text(text):
     import json
     import re
+
+    # If the input is already a dict, return it directly
+    if isinstance(text, dict):
+        return text
     
-    # Try to find JSON block
-    match = re.search(r'\{.*\}', text, re.DOTALL)
+    # Ensure text is a string
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Strategy 1: Look for markdown code block
+    code_block_pattern = r"```json\s*(\{.*?\})\s*```"
+    match = re.search(code_block_pattern, text, re.DOTALL)
     if match:
-        json_str = match.group(0)
         try:
-            return json.loads(json_str)
+            return json.loads(match.group(1))
         except json.JSONDecodeError:
             pass
+
+    # Strategy 2: Look for the LAST valid JSON-like object (Agent often outputs JSON at the end)
+    # We find all substring that look like json object { ... }
+    # Using a naive stack depth approach or regex is risky for nested.
+    # We will try to find the last occurring '}' and match it with a preceding '{'
+    
+    try:
+        # Find the last '}'
+        end_idx = text.rfind('}')
+        if end_idx != -1:
+            # Iterate backwards to find the matching opening '{'
+            # (Simple approach: try parsing from every preceding '{' until success)
+            # This is O(N^2) worst case but N is small (message size).
             
-    # Fallback: try to parse the whole text if it's clean enough
+            # Find all indices of '{' before end_idx
+            start_indices = [m.start() for m in re.finditer(r'\{', text[:end_idx])]
+            
+            # Iterate reversed (from closest '{' to '}')
+            for start_idx in reversed(start_indices):
+                candidate = text[start_idx : end_idx+1]
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    continue
+    except Exception:
+        pass
+        
+    # Strategy 3: Fallback to the whole text
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        # Return a fallback error object if parsing fails
-        return {
-            "suggestion": "Analysis Failed",
-            "severity": 1.0,
-            "description": f"Failed to parse AI response. Raw output: {text[:50]}...",
-            "judge": "System Error"
-        }
+        pass
+        
+    # Strategy 4: Fallback generic error
+    # Clean text for error msg
+    display_text = text[:100].replace('\n', ' ')
+    return {
+        "suggestion": "Analysis Parsing Failed",
+        "severity": 0.0,
+        "description": f"Internal Error: Could not extract valid JSON from Agent output. Please check logs.\n\nRaw Snippet: {display_text}...",
+        "judge": "System Error"
+    }

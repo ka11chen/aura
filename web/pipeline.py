@@ -45,27 +45,23 @@ async def run_pipeline(
 def parse_judgement_results(raw_data):
     formatted_output = []
 
-    for judge_key, result_str in raw_data.items():
+    for judge_key, data in raw_data.items():
         try:
+            # If data is already a dict, use it directly
+            if isinstance(data, dict):
+                formatted_output.append(data)
+                continue
+            
+            # Fallback for string input (legacy support)
             clean_name = judge_key.replace("Judge_", "").replace("_", " ")
 
-            match = re.search(r"(\{.*\})", result_str, re.DOTALL)
+            match = re.search(r"(\{.*\})", data, re.DOTALL)
 
             if match:
                 json_part = match.group(1)
-                data = json.loads(json_part)
-
-                entry = {
-                    "suggestion": data.get("metric_analyzed", "General Feedback"),
-
-                    "severity": data.get("severity", 0),
-
-                    "description": f"{clean_name}: {data.get('suggestion', '')}",
-
-                    "judge": clean_name
-                }
-
-                formatted_output.append(entry)
+                data_dict = json.loads(json_part)
+                # ... legacy mapping if needed, but we assume run_judge did its job ...
+                formatted_output.append(data_dict)
             else:
                 print(f"Warning: No valid JSON found for {judge_key}")
 

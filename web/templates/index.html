@@ -204,11 +204,45 @@
         }
 
         /* FILTER CHIPS */
+        /* ... existing filter css ... */
         .filter-container {
+            /* keep existing */
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+        }
+
+        /* CARD UPDATE with Drag Handles */
+        .suggestion-card {
+            background: var(--card-bg);
+            border-left: 5px solid #555;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: grab;
+            /* Indicates draggable */
+        }
+
+        .suggestion-card:active {
+            cursor: grabbing;
+        }
+
+        .suggestion-card.dragging {
+            opacity: 0.5;
+            border: 2px dashed #666;
+        }
+
+        .drag-handle {
+            display: inline-block;
+            margin-right: 10px;
+            color: #666;
+            cursor: grab;
+            font-size: 1.2rem;
+            line-height: 1;
         }
 
         .filter-chip {
@@ -513,24 +547,41 @@
 
             // Filter Logic
             // Severity: 0.0-0.2 (Good), 0.3-0.5 (Pass), 0.6-0.8 (Warning), 0.9-1.0 (Critical)
-            const filtered = allSuggestions.filter(item => {
-                const s = item.severity;
-                if (filterType === 'all') return true;
-                if (filterType === 'good') return s <= 0.5; // Include Pass in Good for simplicity
-                if (filterType === 'warning') return s > 0.5 && s <= 0.8;
-                if (filterType === 'critical') return s > 0.8;
-                return true;
-            });
+            // If we are filtering, we might disable sorting or just sort the visible ones?
+            // Sorting visual elements vs sorting actual data preference.
+            // If User filters "Critical", they only see critical. If they reorder them, does it matter?
+            // The user wants to set *Importance*. 
+            // It's best if we show ALL for sorting, or handle sorting on the filtered view but save the global preference?
+            // For simplicity: If filter is ACTIVE (not 'all'), we disable sorting to avoid confusion, 
+            // OR we allow sorting but only updating relative order of visible items.
+            // Let's allow sorting in 'All' mode primarily. 
 
-            if (filtered.length === 0) {
+            let displayList = allSuggestions;
+
+            if (currentFilter !== 'all') {
+                displayList = allSuggestions.filter(item => {
+                    const s = item.severity;
+                    if (currentFilter === 'good') return s <= 0.5;
+                    if (currentFilter === 'warning') return s > 0.5 && s <= 0.8;
+                    if (currentFilter === 'critical') return s > 0.8;
+                    return true;
+                });
+            }
+
+            // We do NOT sort by severity here if we want to respect user's manual sort!
+            // But initially we might want Severity sort? 
+            // If we have a preference file, the backend ALREADY sorted them.
+            // So we just render in order.
+
+            // If backend didn't sort (no pref), we might want default severity sort.
+            // We can assume backend sends them in desired order.
+
+            if (displayList.length === 0) {
                 list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>此類別沒有建議 (No suggestions in this category).</p>";
                 return;
             }
 
-            // Sort by severity descending (Critical first)
-            filtered.sort((a, b) => b.severity - a.severity);
-
-            filtered.forEach((item) => {
+            displayList.forEach((item, index) => {
                 const card = document.createElement("div");
 
                 // Determine Class
@@ -542,16 +593,107 @@
                 if (item.severity > 0.8) { severityClass = "sev-crit"; severityLabel = "Critical"; }
 
                 card.className = `suggestion-card ${severityClass}`;
+                card.draggable = true; // Make draggable
+                card.dataset.index = index; // Store original index or ID
+                card.dataset.judge = item.judge || item.judge_id || "System"; // Store ID for saving preference
+
+                // Drag Events
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('drop', handleDrop);
+                card.addEventListener('dragenter', handleDragEnter);
+                card.addEventListener('dragleave', handleDragLeave);
+                card.addEventListener('dragend', handleDragEnd);
 
                 card.innerHTML = `
                     <div class="suggestion-header">
-                        <span class="judge-badge">${item.judge || "System"}</span>
+                        <div>
+                            <span class="drag-handle">☰</span>
+                            <span class="judge-badge">${item.judge || "System"}</span>
+                        </div>
                         <span class="severity-badge">${severityLabel} (${item.severity})</span>
                     </div>
                     <div class="suggestion-title">${item.suggestion || "No Title"}</div>
                     <div class="suggestion-desc">${item.description || "No description provided."}</div>
                 `;
                 list.appendChild(card);
+            });
+        }
+
+        /* Drag & Drop Handlers */
+        let dragSrcEl = null;
+
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+            this.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            if (dragSrcEl !== this) {
+                // Swap DOM elements
+                // It's easier to swap content or re-insert
+                // We will re-insert dragSrcEl before or after this element
+
+                // Simple Re-order logic:
+                const list = document.getElementById("suggestion-list");
+                const items = [...list.children];
+                const srcIndex = items.indexOf(dragSrcEl);
+                const targetIndex = items.indexOf(this);
+
+                if (srcIndex < targetIndex) {
+                    this.after(dragSrcEl);
+                } else {
+                    this.before(dragSrcEl);
+                }
+
+                // Trigger Save
+                saveOrder();
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            let items = document.querySelectorAll('.suggestion-card');
+            items.forEach(function (item) {
+                item.classList.remove('over');
+            });
+        }
+
+        function saveOrder() {
+            const list = document.getElementById("suggestion-list");
+            const items = [...list.children];
+            const newOrder = items.map(item => item.dataset.judge);
+
+            // Send to backend
+            fetch("/update_preferences", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newOrder)
+            }).then(res => {
+                console.log("Preference saved");
             });
         }
 
