@@ -27,22 +27,6 @@ async def run_pipeline(
 
     judge_results = dict(results_list)
 
-<<<<<<< HEAD
-    final = await aggregator.on_messages(
-        [TextMessage(content=str(judge_results), source="system")],
-        cancellation_token=None
-    )
-
-    print("=====Final=====")
-    print(final)
-
-    # formatted_output = parse_judgement_results(judge_results)
-    #
-    # print("=====Results=====")
-    # print(formatted_output)
-
-    return final
-=======
     parsed_results = {}
     
     for judge_id, raw_val in judge_results.items():
@@ -89,7 +73,6 @@ def extract_json_legacy(text):
         return json.loads(text)
     except:
         return None
->>>>>>> origin/Zhanj
 
 def parse_judgement_results(raw_data):
     return []
