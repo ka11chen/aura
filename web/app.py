@@ -54,36 +54,21 @@ def gen_suggestion(h, w):
     
     try:
         raw_result = asyncio.run(main(landmark_list, h, w))
-        # Convert dictionary of results to flat list for frontend
         formatted_suggestions = []
         if isinstance(raw_result, dict):
             for judge_id, judge_data in raw_result.items():
                 if isinstance(judge_data, dict):
-                    # Ensure judge name is present (fallback to ID if not in dict)
                     if 'judge' not in judge_data:
                         judge_data['judge'] = judge_id
                     formatted_suggestions.append(judge_data)
         
-        # Apply Sorting based on Preferences
         try:
             if os.path.exists(PREFERENCE_FILE):
                 with open(PREFERENCE_FILE, 'r') as f:
                     prefs = json.load(f)
-                    # prefs is expected to be a list of identifying strings (e.g. judge names or suggestion titles)
-                    # We assign a priority index: 0 is highest.
-                    # Use a map for O(1) lookup
                     pref_map = {key: i for i, key in enumerate(prefs)}
                     
-                    # Sort function: Known items by index, Unknown items at the end
                     def get_sort_key(item):
-                        # Try to match by Judge Name first, then Title ??
-                        # User requirement: "sort suggestion sequence... next time based on *this* suggestion label importance"
-                        # So we should probably match 'suggestion' (title) or 'judge'.
-                        # Let's try matching 'judge' first as it's more stable for categorizing? 
-                        # Or generic 'suggestion' text? If suggestions change every time, sorting by exact title is brittle.
-                        # But sorting by Judge is stable. Let's assume user sorts by Importance of the Insight.
-                        # Maybe we match Judge ID? 
-                        # Let's save the 'judge' field in preferences.
                         key = item.get('judge', '')
                         return pref_map.get(key, 9999)
 
@@ -149,7 +134,6 @@ def update_preferences():
     from flask import request
     try:
         data = request.json
-        # Expecting data to be a list of strings (Judge Names / IDs) in order of importance
         if not isinstance(data, list):
             return jsonify({"status": "error", "message": "Invalid format"}), 400
             

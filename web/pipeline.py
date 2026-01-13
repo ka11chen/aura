@@ -27,41 +27,52 @@ async def run_pipeline(
 
     judge_results = dict(results_list)
 
-    judge_results = dict(results_list)
+    parsed_results = {}
+    
+    for judge_id, raw_val in judge_results.items():
+        parsed = None
+        
+        try:
+            if isinstance(raw_val, dict):
+                parsed = raw_val
+            else:
+                parsed = extract_json_legacy(raw_val)
+        except Exception:
+            pass
+            
+        if parsed:
+            if 'judge' not in parsed:
+                 clean_name = judge_id.replace("Judge_", "").replace("_", " ")
+                 parsed['judge'] = clean_name
+            
+            parsed_results[judge_id] = parsed
+        else:
+            parsed_results[judge_id] = {
+                "metric_analyzed": "Error",
+                "severity": 3,
+                "suggestion": "Failed to parse analysis result.",
+                "judge": judge_id
+            }
 
-    formatted_output = parse_judgement_results(judge_results)
+    formatted_output = list(parsed_results.values())
 
     print("=====Results=====")
     print(formatted_output)
 
-    return judge_results
+    return parsed_results
+
+def extract_json_legacy(text):
+    if not isinstance(text, str): return text
+    match = re.search(r"(\{.*\})", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except:
+             return None
+    try:
+        return json.loads(text)
+    except:
+        return None
 
 def parse_judgement_results(raw_data):
-    formatted_output = []
-
-    for judge_key, data in raw_data.items():
-        try:
-            # If data is already a dict, use it directly
-            if isinstance(data, dict):
-                formatted_output.append(data)
-                continue
-            
-            # Fallback for string input (legacy support)
-            clean_name = judge_key.replace("Judge_", "").replace("_", " ")
-
-            match = re.search(r"(\{.*\})", data, re.DOTALL)
-
-            if match:
-                json_part = match.group(1)
-                data_dict = json.loads(json_part)
-                # ... legacy mapping if needed, but we assume run_judge did its job ...
-                formatted_output.append(data_dict)
-            else:
-                print(f"Warning: No valid JSON found for {judge_key}")
-
-        except json.JSONDecodeError as e:
-            print(f"Error parsing JSON for {judge_key}: {e}")
-        except Exception as e:
-            print(f"Unexpected error for {judge_key}: {e}")
-
-    return formatted_output
+    return []

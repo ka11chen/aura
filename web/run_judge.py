@@ -56,8 +56,8 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         f"```\n{landmark_map}\n```\n\n"
 
         "## DATA LOCATIONS\n"
-        "1. **User Data**: `landmarks.json` (Structure: A List of frames (`[...]`), where each frame is a LIST of landmark objects (`[{'x':..., 'y':..., 'z':...}, ...]`). DIRECTLY ACCESSIBLE, NO 'landmarks' key.)\n"
-        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json` (SAME Structure).\n\n"
+        "1. **User Data**: `landmarks.json` (Structure: A List of frames, where each frame has 'landmarks')\n"
+        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json`.\n\n"
 
         "## OPERATIONAL PROTOCOL (STRICT SEQUENCE)\n"
         "You must execute the following phases in order. Do not skip steps.\n\n"
@@ -72,44 +72,53 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "1. Direct the 'Feature_Extractor' to write a Python script.\n"
         "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Only give instructions.\n"
         "3. **CRITICAL INSTRUCTIONS FOR THE SCRIPT**:\n"
-        "   - **Import**: `import aura_analysis_lib` (It is in the same folder).\n"
-        "   - **Define Metric**: Write a SINGLE function `def calculate_metric(frame):` that takes a list of landmarks and returns a float (or None).\n"
-        "     - Implement the math defined in Phase 1 (e.g. angle between 11-13-15).\n"
-        "   - **Run Analysis**: Call `print(aura_analysis_lib.run_analysis('" + judge_agent.name + "', calculate_metric))` at the end.\n"
-        "   - **NO CSV/JSON LOADING**: Do NOT write code to open files. The library handles ALL reading.\n"
+        f"   - **Load**: Read `landmarks.json` and ALL `{judge_agent.name}*.json` files in `reference/`.\n"
+        "   - **Robustness**: The script must handle data structure variations (e.g., check if landmarks are in a list or dictionary) to avoid KeyErrors.\n"
+        "   - **Feature Function**: Implement the math defined in Phase 1 (e.g., `calculate_angle`).\n"
+        "   - **Process Data**: \n"
+        "       a. Compute the average feature value across ALL frames for the User.\n"
+        "       b. Compute the average feature value for EACH Reference file individually.\n"
+        "   - **Calculate Statistics**: \n"
+        "       a. **Reference Range**: Find `min()` and `max()` of the reference averages.\n"
+        "       b. **Reference Mean**: Find `mean()` of the reference averages.\n"
+        "   - **Output**: The script **MUST print** a JSON string:\n"
+        "     `{\"metric_name\": \"...\", \"user_value\": 88.5, \"ref_min\": 80.0, \"ref_max\": 100.0, \"ref_mean\": 90.0, \"status\": \"Inside/Outside\"}`\n"
         "4. **STOP** speaking immediately after giving the command.\n\n"
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
         "1. Wait for the JSON output. Compare `user_value` against `ref_min` and `ref_max`.\n"
-        "2. Determine the `severity` score (0.0 to 1.0) using this RANGE-BASED RUBRIC:\n\n"
+        "2. Determine the `severity` score (0 to 3) using this RANGE-BASED RUBRIC:\n\n"
         
-        "   --- JUDGMENT RUBRIC (0.0-1.0 Scale) ---\n"
+        "   --- JUDGMENT RUBRIC (0-3 Scale) ---\n"
         
-        "   **SEVERITY 0.0 - 0.2 (Perfect Match / Strength)**\n"
+        "   **SEVERITY 0 (Perfect Match / Strength)**\n"
         "   - **Condition**: User is **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
-        "   - **Verdict**: This is a **STRENGTH**.\n\n"
+        "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
+        "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
         
-        "   **SEVERITY 0.3 - 0.5 (Acceptable / Minor Polish)**\n"
+        "   **SEVERITY 1 (Acceptable / Minor Polish)**\n"
         "   - **Condition**: User is **INSIDE** the range, but located near the edges (borderline).\n"
-        "   - **Verdict**: **PASS**.\n\n"
+        "   - **Verdict**: **PASS**. The behavior is professional and natural, though there is slight room for refinement.\n"
+        "   - **Suggestion**: Affirmation with a minor tip. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more, but it works.')\n\n"
         
-        "   **SEVERITY 0.6 - 0.8 (Noticeable Deviation / Warning)**\n"
+        "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
         "   - **Condition**: User is **OUTSIDE** the range, but the distance to the edge is **LESS than 1.0x** the `range_span`.\n"
         "     *Formula*: `dist(user, edge) < range_span`\n"
-        "   - **Verdict**: **WARNING**.\n\n"
+        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
+        "   - **Suggestion**: Specific correction. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
         
-        "   **SEVERITY 0.9 - 1.0 (Critical Failure)**\n"
+        "   **SEVERITY 3 (Critical Failure)**\n"
         "   - **Condition**: User is **OUTSIDE** the range, and the distance is **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
-        "   - **Verdict**: **CRITICAL**.\n\n"
+        "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
+        "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
 
         "2. **Final Output**: You MUST output a **Single JSON Object** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "   ```json\n"
         "   {\n"
-        "     \"suggestion\": \"(Short title/headline of the advice, e.g. 'Good Hand Posture')\",\n"
-        "     \"severity\": 0.1,  // Float between 0.0 (Good) and 1.0 (Critical)\n"
-        "     \"description\": \"(Full explanation and professional advice based on the data)\",\n"
-        "     \"judge\": \"" + judge_agent.label + "\" // The Name of the Judge\n"
+        "     \"metric_analyzed\": \"(e.g. Elbow Angle)\",\n"
+        "     \"severity\": 1,  // Integer: 0, 1, 2, or 3\n"
+        "     \"suggestion\": \"(Write your advice here based on the data difference)\"\n"
         "   }\n"
         "   ```\n"
         f"3. ONLY THEN, output the exact keyword consisting of '{key_part_1}' and '{key_part_2}' joined by an underscore.\n\n"
@@ -126,68 +135,5 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         if isinstance(msg, TextMessage) and msg.source == judge_agent.name:
             final_comment = msg.content
             break
-            
-    return extract_json_from_text(final_comment)
 
-def extract_json_from_text(text):
-    import json
-    import re
-
-    # If the input is already a dict, return it directly
-    if isinstance(text, dict):
-        return text
-    
-    # Ensure text is a string
-    if not isinstance(text, str):
-        text = str(text)
-    
-    # Strategy 1: Look for markdown code block
-    code_block_pattern = r"```json\s*(\{.*?\})\s*```"
-    match = re.search(code_block_pattern, text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    # Strategy 2: Look for the LAST valid JSON-like object (Agent often outputs JSON at the end)
-    # We find all substring that look like json object { ... }
-    # Using a naive stack depth approach or regex is risky for nested.
-    # We will try to find the last occurring '}' and match it with a preceding '{'
-    
-    try:
-        # Find the last '}'
-        end_idx = text.rfind('}')
-        if end_idx != -1:
-            # Iterate backwards to find the matching opening '{'
-            # (Simple approach: try parsing from every preceding '{' until success)
-            # This is O(N^2) worst case but N is small (message size).
-            
-            # Find all indices of '{' before end_idx
-            start_indices = [m.start() for m in re.finditer(r'\{', text[:end_idx])]
-            
-            # Iterate reversed (from closest '{' to '}')
-            for start_idx in reversed(start_indices):
-                candidate = text[start_idx : end_idx+1]
-                try:
-                    return json.loads(candidate)
-                except json.JSONDecodeError:
-                    continue
-    except Exception:
-        pass
-        
-    # Strategy 3: Fallback to the whole text
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-        
-    # Strategy 4: Fallback generic error
-    # Clean text for error msg
-    display_text = text[:100].replace('\n', ' ')
-    return {
-        "suggestion": "Analysis Parsing Failed",
-        "severity": 0.0,
-        "description": f"Internal Error: Could not extract valid JSON from Agent output. Please check logs.\n\nRaw Snippet: {display_text}...",
-        "judge": "System Error"
-    }
+    return final_comment
