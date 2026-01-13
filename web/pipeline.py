@@ -64,9 +64,11 @@ async def run_pipeline(
         cancellation_token=None
     )
 
-    print(final)
+    final_content = final.chat_message.content
 
-    return formatted_output
+    print(final_content)
+
+    return final_content
 
 def extract_json_legacy(text):
     if not isinstance(text, str): return text
