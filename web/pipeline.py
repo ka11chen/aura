@@ -66,7 +66,7 @@ async def run_pipeline(
 
     print(final)
 
-    return final
+    return formatted_output
 
 def extract_json_legacy(text):
     if not isinstance(text, str): return text
