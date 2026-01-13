@@ -6,10 +6,13 @@ import threading
 import asyncio
 import numpy as np
 
+import json
 from _autogen import main
 from _camera import VideoCamera
 from _landmark import landmark
 from _skeleton import *
+
+PREFERENCE_FILE = "user_preferences.json"
 
 app = Flask(__name__)
 
@@ -26,7 +29,7 @@ image_cnt = 0
 done_cnt = 0
 
 landmark_dict = {}
-suggestion = ''
+suggestion = []
 
 SAVE_DIR = "captures"
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -50,10 +53,39 @@ def gen_suggestion(h, w):
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
     
     try:
-        suggestion = str(asyncio.run(main(landmark_list, h, w)))
+        raw_result = asyncio.run(main(landmark_list, h, w))
+        formatted_suggestions = []
+        if isinstance(raw_result, dict):
+            for judge_id, judge_data in raw_result.items():
+                if isinstance(judge_data, dict):
+                    if 'judge' not in judge_data:
+                        judge_data['judge'] = judge_id
+                    formatted_suggestions.append(judge_data)
+        
+        try:
+            if os.path.exists(PREFERENCE_FILE):
+                with open(PREFERENCE_FILE, 'r') as f:
+                    prefs = json.load(f)
+                    pref_map = {key: i for i, key in enumerate(prefs)}
+                    
+                    def get_sort_key(item):
+                        key = item.get('judge', '')
+                        return pref_map.get(key, 9999)
+
+                    formatted_suggestions.sort(key=get_sort_key)
+        except Exception as e:
+            print(f"Sorting Error: {e}")
+
+        suggestion = formatted_suggestions
+            
     except Exception as e:
         print(f"gen_suggestion Error: {e}")
-        suggestion = "後端分析發生錯誤，請檢查後端日誌。"
+        suggestion = [{
+            "judge": "System",
+            "suggestion": "System Error",
+            "severity": 1.0,
+            "description": "後端分析發生錯誤，請檢查後端日誌。"
+        }]
         
     state = 3
 
@@ -97,12 +129,27 @@ def status():
         "total_frames": len(landmark_dict)
     }
 
+@app.route("/update_preferences", methods=["POST"])
+def update_preferences():
+    from flask import request
+    try:
+        data = request.json
+        if not isinstance(data, list):
+            return jsonify({"status": "error", "message": "Invalid format"}), 400
+            
+        with open(PREFERENCE_FILE, 'w') as f:
+            json.dump(data, f)
+            
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/start_capture", methods=["POST"])
 def start_capture():
     global state, start_time, last_saved_time, image_cnt, landmark_dict, done_cnt, suggestion
     landmark_dict.clear()
     state = 1
-    suggestion = ''
+    suggestion = []
     start_time = time.time()
     last_saved_time = start_time - SAVE_INTERVAL
     image_cnt = 0
