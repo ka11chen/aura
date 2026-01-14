@@ -49,35 +49,17 @@ def gen_landmark(frame, idx):
 
 def gen_suggestion(h, w):
     global state, suggestion, landmark_dict
-    
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
-    
     try:
-        raw_result = asyncio.run(main(landmark_list, h, w))
-        formatted_suggestions = []
-        if isinstance(raw_result, dict):
-            for judge_id, judge_data in raw_result.items():
-                if isinstance(judge_data, dict):
-                    if 'judge' not in judge_data:
-                        judge_data['judge'] = judge_id
-                    formatted_suggestions.append(judge_data)
-        
-        try:
-            if os.path.exists(PREFERENCE_FILE):
-                with open(PREFERENCE_FILE, 'r') as f:
-                    prefs = json.load(f)
-                    pref_map = {key: i for i, key in enumerate(prefs)}
-                    
-                    def get_sort_key(item):
-                        key = item.get('judge', '')
-                        return pref_map.get(key, 9999)
+        if os.path.exists(PREFERENCE_FILE):
+            with open(PREFERENCE_FILE, 'r') as f:
+                prefs = json.load(f)
+                raw_result = asyncio.run(main(landmark_list, h, w))
+                for data in raw_result:
+                    print(prefs[data["judge"]])
+                    data["severity"]*=prefs[data["judge"]]
+                suggestion = raw_result
 
-                    formatted_suggestions.sort(key=get_sort_key)
-        except Exception as e:
-            print(f"Sorting Error: {e}")
-
-        suggestion = formatted_suggestions
-            
     except Exception as e:
         print(f"gen_suggestion Error: {e}")
         suggestion = [{
