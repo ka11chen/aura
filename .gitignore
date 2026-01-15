@@ -2,8 +2,8 @@ assets/
 captures/
 
 # autogen
-web/.coding/tmp_code_*
-web/.coding/landmarks.json
+web/.coding/*
+!web/.coding/reference/
 
 # py
 __pycache__/
