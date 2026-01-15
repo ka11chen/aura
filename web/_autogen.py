@@ -30,5 +30,6 @@ async def main(landmark_ret, h, w):
         judges=judges,
         aggregator=score_aggregator,
     )
-
+    print("=====ULTIMATE RESULT=====")
+    print(repr(result))
     return result
