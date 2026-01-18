@@ -8,7 +8,7 @@ judge_roster = [
     # {"id": "Judge_Elon_Musk", "target_figure": "Elon Musk"},
 ]
 
-async def main(landmark_ret, h, w):
+async def main(landmark_ret):
     feature_extractor = load_agent_from_json("../agents/Feature_Extractor.json")
     score_aggregator = load_agent_from_json("../agents/Score_Aggregator.json")
 

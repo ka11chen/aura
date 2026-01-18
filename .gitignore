@@ -1,5 +1,6 @@
 assets/
 captures/
+uploads/
 
 # autogen
 web/.coding/*

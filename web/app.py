@@ -12,8 +12,6 @@ from _camera import VideoCamera
 from _landmark import landmark
 from _skeleton import *
 
-PREFERENCE_FILE = "user_preferences.json"
-
 app = Flask(__name__)
 
 cap = VideoCamera()
@@ -21,18 +19,21 @@ mp_landmark = landmark()
 
 CAPTURE_DURATION = 10
 SAVE_INTERVAL = 1
+SAVE_DIR = "captures"
+UPLOAD_DIR = "uploads"
+PREFERENCE_FILE = "user_preferences.json"
 
 state = 0
 start_time = None
 last_saved_time = None
 image_cnt = 0
 done_cnt = 0
-
 landmark_dict = {}
 suggestion = []
 judges=["Steve Jobs","Donald Trump"] # should enable user judge later
-SAVE_DIR = "captures"
+
 os.makedirs(SAVE_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 with open(PREFERENCE_FILE,'w') as f: # init preference
     preference={i:1 for i in judges}
     json.dump(preference,f)
@@ -50,11 +51,12 @@ def gen_landmark(frame, idx):
     finally:
         done_cnt += 1
 
-def gen_suggestion(h, w):
+def gen_suggestion():
     global state, suggestion, landmark_dict
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
     try:
-        raw_result = json.loads(asyncio.run(main(landmark_list, h, w)))
+        raw_result = json.loads(asyncio.run(main(landmark_list)))
+        # raw_result=[]
         with open(PREFERENCE_FILE, 'r') as f:
             prefs = json.load(f)
             for data in raw_result:
@@ -88,10 +90,13 @@ def gen_frames():
                 image_cnt += 1
                 threading.Thread(target=gen_landmark, args=(frame.copy(), current_idx), daemon=True).start()
 
-            if now - start_time >= CAPTURE_DURATION and done_cnt >= image_cnt:
+            if now - start_time >= CAPTURE_DURATION:
+                state=10 # so that /upload can use
+        
+        if state == 10:
+            if done_cnt >= image_cnt:
                 state = 2
-                h, w = frame.shape[:2]
-                threading.Thread(target=gen_suggestion, args=(h, w), daemon=True).start()
+                threading.Thread(target=gen_suggestion, daemon=True).start()
 
         ret, jpeg = cv2.imencode('.jpg', frame)
         yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n")
@@ -175,7 +180,7 @@ def get_result_image(img_type, frame_idx):
     _, img_encoded = cv2.imencode('.jpg', black_canvas)
     return Response(img_encoded.tobytes(), mimetype='image/jpeg')
 
-@app.route("/api/upd_preference", methods=["POST"])
+@app.route("/upd_preference", methods=["POST"])
 def upd_preference():
     try:
         data = request.get_json()
@@ -194,6 +199,47 @@ def upd_preference():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    global state, image_cnt, done_cnt
+    image_cnt = 0
+    done_cnt = 0
+    file = request.files.get("file")
+    if not file:
+        return "No file", 400
+    
+    # Save uploaded video
+    video_path = os.path.join(UPLOAD_DIR, file.filename)
+    file.save(video_path)
+
+    cap2 = cv2.VideoCapture(video_path)
+    if not cap2.isOpened():
+        return "Failed to open video", 400
+
+    fps = cap2.get(cv2.CAP_PROP_FPS)
+
+    frame_interval = int(fps * SAVE_INTERVAL)
+    max_frames = int(fps * CAPTURE_DURATION)
+
+    frame_idx = 0
+    current_idx = 0
+
+    while cap2.isOpened() and frame_idx < max_frames:
+        ret, frame = cap2.read()
+        if not ret:
+            break
+
+        if frame_idx % frame_interval == 0:
+            current_idx = image_cnt
+            image_cnt+=1
+            threading.Thread(target=gen_landmark, args=(frame.copy(), current_idx), daemon=True).start()
+
+        frame_idx += 1
+
+    cap2.release()
+    state = 10 # call gen_suggestion in big loop
+    return {"status": "started"}
 
 if __name__ == "__main__":
     app.run(debug=True,use_reloader=False)
