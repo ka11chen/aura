@@ -57,14 +57,14 @@ def gen_landmark(frame, idx):
 def gen_modified_skel(idx):
     print("modified skel:",idx)
     global modified_skel, suggestion
-    # filename = f"{SAVE_DIR}/frame_{idx}.jpg"
-    # if not os.path.exists(filename):
-    #     print(f"gen_modified_skel: cannot find file {filename}") 
-    #     return
-    # if idx not in modified_skel:
-    #     modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
-    global landmark_dict
-    modified_skel[idx]=landmark_dict[idx]
+    filename = f"{SAVE_DIR}/frame_{idx}.jpg"
+    if not os.path.exists(filename):
+        print(f"gen_modified_skel: cannot find file {filename}") 
+        return
+    if idx not in modified_skel:
+        modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
+    # global landmark_dict
+    # modified_skel[idx]=landmark_dict[idx]
     return
 
 def gen_modified_skels():
