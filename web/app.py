@@ -56,7 +56,7 @@ def gen_landmark(frame, idx):
 
 def gen_modified_skel(idx):
     print("modified skel:",idx)
-    global modified_skel
+    global modified_skel, suggestion
     filename = f"{SAVE_DIR}/frame_{idx}.jpg"
     if not os.path.exists(filename):
         print(f"gen_modified_skel: cannot find file {filename}") 
@@ -197,10 +197,10 @@ def get_result_image(img_type, frame_idx):
             draw_skeleton(original_img, current_landmarks, "default")
             black_canvas=original_img
     elif img_type == "modified":
-        if frame_idx not in modified_skel: 
+        if not (frame_idx in modified_skel and modified_skel[frame_idx].pose_landmarks):
             cv2.putText(black_canvas, "Waiting or No Data", (50, h//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (100,100,100), 2)
         else:
-            ideal_landmarks = modified_skel[frame_idx]
+            ideal_landmarks = modified_skel[frame_idx].pose_landmarks[0]
             draw_skeleton(black_canvas, ideal_landmarks, "ideal")
 
     _, img_encoded = cv2.imencode('.jpg', black_canvas)
