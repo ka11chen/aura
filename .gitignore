@@ -34,3 +34,6 @@ image_to_landmarks.py
 
 #user preferences
 web/user_preferences.json
+
+# instruct-pix2pix
+instruct-pix2pix/

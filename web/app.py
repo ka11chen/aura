@@ -12,6 +12,8 @@ from _camera import VideoCamera
 from _landmark import landmark
 from _skeleton import *
 
+from edit_pose import run_pose_edit
+
 app = Flask(__name__)
 
 cap = VideoCamera()
@@ -56,7 +58,7 @@ def gen_suggestion():
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
     try:
         raw_result = json.loads(asyncio.run(main(landmark_list)))
-        # raw_result=[]
+        #raw_result=[]
         with open(PREFERENCE_FILE, 'r') as f:
             prefs = json.load(f)
             for data in raw_result:
@@ -174,8 +176,8 @@ def get_result_image(img_type, frame_idx):
             draw_skeleton(original_img, current_landmarks, "default")
             black_canvas=original_img
         elif img_type == "modified":
-            ideal_landmarks = generate_ideal_pose(current_landmarks)
-            draw_skeleton(black_canvas, ideal_landmarks, "ideal")
+            ideal_landmarks = run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
+            draw_skeleton(black_canvas, ideal_landmarks.pose_landmarks[0], "ideal")
 
     _, img_encoded = cv2.imencode('.jpg', black_canvas)
     return Response(img_encoded.tobytes(), mimetype='image/jpeg')
