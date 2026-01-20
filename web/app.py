@@ -32,6 +32,7 @@ image_cnt = 0
 done_cnt = 0
 landmark_dict = {}
 suggestion = []
+modified_skel = {}
 judges=["Steve Jobs","Donald Trump"] # should enable user judge later
 
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -53,12 +54,30 @@ def gen_landmark(frame, idx):
     finally:
         done_cnt += 1
 
+def gen_modified_skel(idx):
+    print("modified skel:",idx)
+    global modified_skel
+    filename = f"{SAVE_DIR}/frame_{idx}.jpg"
+    if not os.path.exists(filename):
+        print(f"gen_modified_skel: cannot find file {filename}") 
+        return
+    if idx not in modified_skel:
+        modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
+    # global landmark_dict
+    # modified_skel[idx]=landmark_dict[idx].pose_landmarks[0]
+    return
+
+def gen_modified_skels():
+    global done_cnt
+    for i in range(done_cnt):
+        gen_modified_skel(i)
+
 def gen_suggestion():
     global state, suggestion, landmark_dict
     landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
     try:
         raw_result = json.loads(asyncio.run(main(landmark_list)))
-        #raw_result=[]
+        # raw_result=[]
         with open(PREFERENCE_FILE, 'r') as f:
             prefs = json.load(f)
             for data in raw_result:
@@ -75,6 +94,7 @@ def gen_suggestion():
         }]
         
     state = 3
+    gen_modified_skels()
 
 def gen_frames():
     global state, start_time, last_saved_time, image_cnt, done_cnt
@@ -136,10 +156,11 @@ def update_preferences():
 
 @app.route("/start_capture", methods=["POST"])
 def start_capture():
-    global state, start_time, last_saved_time, image_cnt, landmark_dict, done_cnt, suggestion
+    global state, start_time, last_saved_time, image_cnt, landmark_dict, done_cnt, suggestion, modified_skel
     landmark_dict.clear()
     state = 1
     suggestion = []
+    modified_skel.clear()
     start_time = time.time()
     last_saved_time = start_time - SAVE_INTERVAL
     image_cnt = 0
@@ -148,7 +169,7 @@ def start_capture():
 
 @app.route("/result_image/<img_type>/<int:frame_idx>")
 def get_result_image(img_type, frame_idx):
-    global landmark_dict
+    global landmark_dict, modified_skel
     
     filename = f"{SAVE_DIR}/frame_{frame_idx}.jpg"
     if not os.path.exists(filename):
@@ -169,15 +190,18 @@ def get_result_image(img_type, frame_idx):
     has_data = res and res.pose_landmarks
     current_landmarks = res.pose_landmarks[0] if has_data else []
 
-    if not has_data:
-        cv2.putText(black_canvas, "No Data", (50, h//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (100,100,100), 2)
-    else:
-        if img_type == "skeleton":
+    if img_type == "skeleton":
+        if not has_data:
+            cv2.putText(black_canvas, "No Data", (50, h//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (100,100,100), 2)
+        else:
             draw_skeleton(original_img, current_landmarks, "default")
             black_canvas=original_img
-        elif img_type == "modified":
-            ideal_landmarks = run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
-            draw_skeleton(black_canvas, ideal_landmarks.pose_landmarks[0], "ideal")
+    elif img_type == "modified":
+        if frame_idx not in modified_skel: 
+            cv2.putText(black_canvas, "Waiting or No Data", (50, h//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (100,100,100), 2)
+        else:
+            ideal_landmarks = modified_skel[frame_idx]
+            draw_skeleton(black_canvas, ideal_landmarks, "ideal")
 
     _, img_encoded = cv2.imencode('.jpg', black_canvas)
     return Response(img_encoded.tobytes(), mimetype='image/jpeg')
