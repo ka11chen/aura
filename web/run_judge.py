@@ -87,11 +87,11 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
         "1. Wait for the JSON output. Compare `user_value` against `ref_min` and `ref_max`.\n"
-        "2. Determine the `severity` score (0 to 3) using this RANGE-BASED RUBRIC:\n\n"
+        "2. Determine the `severity` score (int) using this RANGE-BASED RUBRIC:\n\n"
         
-        "   --- JUDGMENT RUBRIC (0-3 Scale) ---\n"
+        "   --- JUDGMENT RUBRIC ---\n"
         
-        "   **SEVERITY 0 (Perfect Match / Strength)**\n"
+        "   **SEVERITY -1 (Perfect Match / Strength)**\n"
         "   - **Condition**: User is **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
         "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
         "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
@@ -117,7 +117,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "   ```json\n"
         "   {\n"
         "     \"metric_analyzed\": \"(e.g. Elbow Angle)\",\n"
-        "     \"severity\": 1,  // Integer: 0, 1, 2, or 3\n"
+        "     \"severity\": 1,  // Integer: -1, 1, 2, or 3\n"
         "     \"suggestion\": \"(Write your advice here based on the data difference)\"\n"
         "   }\n"
         "   ```\n"
