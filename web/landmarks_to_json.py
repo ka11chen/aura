@@ -1,7 +1,7 @@
 import json
 import os
 
-def save_landmarks_to_file(result, filename="landmarks.json", is_reference=False):
+def save_landmarks_to_file(result_list, filename="landmarks.json", is_reference=False):
     base_dir = ".coding"
 
     if is_reference:
@@ -14,18 +14,18 @@ def save_landmarks_to_file(result, filename="landmarks.json", is_reference=False
     file_path = os.path.join(target_dir, filename)
 
     simplified_data = []
-
-    if result and hasattr(result, 'pose_landmarks'):
-        for frame in result.pose_landmarks:
-            frame_points = []
-            for p in frame:
-                frame_points.append({
-                    "x": p.x,
-                    "y": p.y,
-                    "z": p.z,
-                    "visibility": getattr(p, 'visibility', 0.0)
-                })
-            simplified_data.append(frame_points)
+    for result in result_list:
+        if result and hasattr(result, 'pose_landmarks'):
+            for frame in result.pose_landmarks:
+                frame_points = []
+                for p in frame:
+                    frame_points.append({
+                        "x": p.x,
+                        "y": p.y,
+                        "z": p.z,
+                        "visibility": getattr(p, 'visibility', 0.0)
+                    })
+                simplified_data.append(frame_points)
 
     with open(file_path, "w", encoding='utf-8') as f:
         json.dump(simplified_data, f)

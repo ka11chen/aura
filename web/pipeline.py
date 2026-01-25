@@ -1,6 +1,3 @@
-import json
-import re
-
 from autogen_agentchat.messages import TextMessage
 from run_judge import run_analysis_session
 import asyncio
@@ -40,16 +37,3 @@ async def run_pipeline(
     print(final_content)
 
     return final_content
-
-def extract_json_legacy(text):
-    if not isinstance(text, str): return text
-    match = re.search(r"(\{.*\})", text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except:
-             return None
-    try:
-        return json.loads(text)
-    except:
-        return None

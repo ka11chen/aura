@@ -23,7 +23,7 @@ async def main(landmark_ret):
         judges.append(agent)
 
     if landmark_ret:
-        save_landmarks_to_file(landmark_ret[3])
+        save_landmarks_to_file(landmark_ret)
 
     result = await run_pipeline(
         feature_extractor=feature_extractor,
