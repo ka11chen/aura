@@ -62,7 +62,7 @@ def gen_modified_skel(idx):
         print(f"gen_modified_skel: cannot find file {filename}") 
         return
     if idx not in modified_skel:
-        modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"]+" "+suggestion[0]["description"])
+        modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"])
     # global landmark_dict
     # modified_skel[idx]=landmark_dict[idx]
     return
