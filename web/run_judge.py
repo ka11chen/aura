@@ -91,24 +91,30 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         
         "   --- JUDGMENT RUBRIC ---\n"
         
-        "   **SEVERITY -1 (Perfect Match / Strength)**\n"
-        "   - **Condition**: User is always **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
+        "   **SEVERITY -2 (Perfect Match / Strength)**\n"
+        "   - **Condition**: User is always (100%) **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
         "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
         "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
         
-        "   **SEVERITY 1 (Acceptable / Minor Polish)**\n"
-        "   - **Condition**: User is usually **INSIDE** the range, but sometimes outside the range.\n"
+        "   **SEVERITY -1 (Acceptable / Minor Polish)**\n"
+        "   - **Condition**: User is mostly (70%) **INSIDE** the range, but sometimes outside the range.\n"
         "   - **Verdict**: **PASS**. The behavior is professional and natural, though there is slight room for refinement.\n"
-        "   - **Suggestion**: Affirmation with a minor tip. Focus on the timing, use prases such as 'in the begin', or 'near middle' to describe time range; do not use 'frame' to describe time. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more in the middle of your presentation in the end, but it works.')\n\n"
+        "   - **Suggestion**: Affirmation with a minor tip. Focus on the timing, use praises such as 'in the begin', or 'near middle' to describe time range; do not use 'frame' to describe time. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more in the middle of your presentation in the end, but it works.')\n\n"
+        
+        "   **SEVERITY 1 (Noticeable Deviation / Warning)**\n"
+        "   - **Condition**: User is sometimes (40%) **OUTSIDE** the range, but most of the distances to the edge are **LESS than 1.0x** the `range_span`.\n"
+        "     *Formula*: `dist(user, edge) < range_span`\n"
+        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
+        "   - **Suggestion**: Specific correction. Also mentions the time range if needed. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
         
         "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
-        "   - **Condition**: User is mostly **OUTSIDE** the range, but most of the distances to the edge are **LESS than 1.0x** the `range_span`.\n"
+        "   - **Condition**: User is mostly (70%) **OUTSIDE** the range, but most of the distances to the edge are **LESS than 1.0x** the `range_span`.\n"
         "     *Formula*: `dist(user, edge) < range_span`\n"
         "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
         "   - **Suggestion**: Specific correction. Also mentions the time range if needed. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
         
         "   **SEVERITY 3 (Critical Failure)**\n"
-        "   - **Condition**: User is mostly **OUTSIDE** the range, and most of the distances are **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
+        "   - **Condition**: User is mostly (70%) **OUTSIDE** the range, and most of the distances are **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
         "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
         "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
 
@@ -117,7 +123,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "```json\n"
         "{"
         "\"metric_analyzed\": \"(e.g. Elbow Angle)\","
-        "\"severity\": (-1 or 1, 2, 3),"
+        "\"severity\": (-2, -1 or 1, 2, 3),"
         "\"suggestion\": \"(Write your advice here based on the data difference)\""
         "}"
         "```\n"
