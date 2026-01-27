@@ -306,6 +306,14 @@
             white-space: pre-wrap;
         }
 
+        .sev-ignored {
+            border-left-color: var(--text-color);
+        }
+
+        .sev-ignored .severity-badge {
+            color: var(--text-color);
+        }
+
         .sev-good {
             border-left-color: var(--severity-0);
         }
@@ -416,6 +424,7 @@
                     <div class="filter-chip" onclick="filterSuggestions('critical')">Critical Issues</div>
                     <div class="filter-chip" onclick="filterSuggestions('warning')">Warnings</div>
                     <div class="filter-chip" onclick="filterSuggestions('good')">Good Points</div>
+                    <div class="filter-chip" onclick="filterSuggestions('ignored')">Ignored</div>
                 </div>
 
                 <div id="suggestion-list" class="suggestion-list">
@@ -494,53 +503,25 @@
             currentFrame = 0;
 
             allSuggestions = data.suggestion || [];
+            makelist();
             filterSuggestions('all');
             updateGallery();
         }
 
-        function filterSuggestions(filterType) {
-            currentFilter = filterType;
-
-            document.querySelectorAll('.filter-chip').forEach(el => {
-                el.classList.remove('active');
-                if (el.innerText.toLowerCase().includes(filterType) || (filterType === 'all' && el.innerText === 'All')) {
-                    el.classList.add('active');
-                }
-            });
-
+        function makelist(){
             const list = document.getElementById("suggestion-list");
             list.innerHTML = "";
 
-            if (!allSuggestions || allSuggestions.length === 0) {
-                list.innerHTML = "<p style='text-align:center; color:#666;'>沒有收到 AI 的建議。</p>";
-                return;
-            }
-
             let displayList = allSuggestions; //copy
-
-            if (currentFilter !== 'all') {
-                displayList = allSuggestions.filter(item => {
-                    const s = item.severity;
-                    if (currentFilter === 'good') return s < 0;
-                    if (currentFilter === 'warning') return 0 <= s && s < 2;
-                    if (currentFilter === 'critical') return 2 <= s;
-                    return true;
-                });
-            }
-            if(currentFilter === 'good') displayList.reverse();
-
-            if (displayList.length === 0) {
-                list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>此類別沒有建議 (No suggestions in this category).</p>";
-                return;
-            }
-
             displayList.forEach((item, index) => {
                 const card = document.createElement("div");
 
                 let severityClass = "sev-good";
                 let severityLabel = "Strength";
-
-                if (item.severity < 0) {
+                if (item.severity < 0.5 && item.severity > -0.5){
+                    severityClass = "sev-ignored";
+                    severityLabel = "Ignored ( "+item.severity+" )";
+                } else if (item.severity < 0) {
                     severityClass = "sev-good";
                     severityLabel = "Strength ( "+item.severity+" )";
                 } else if (item.severity < 2) {
@@ -556,6 +537,7 @@
                 card.className = `suggestion-card ${severityClass}`;
                 card.dataset.index = index;
                 card.dataset.judge = item.judge;
+                card.dataset.severity = item.severity;
                 card.innerHTML = `
                     <div class="suggestion-header">
                         <div>
@@ -617,6 +599,40 @@
                     body: JSON.stringify({ judge, delta })
                 });
             });
+
+        }
+        function isdisplay(filterType, s){
+            currentFilter=filterType;
+            // console.log(filterType, s);
+            if (currentFilter === 'good') return s <= -0.5;
+            if (currentFilter === 'warning') return 0.5 <= s && s < 2;
+            if (currentFilter === 'critical') return 2 <= s;
+            if (currentFilter === 'all') return s <= -0.5 || 0.5 <= s;
+            if (currentFilter === 'ignored') return -0.5 < s && s < 0.5;
+            return true;
+        }
+        function filterSuggestions(filterType) {
+            currentFilter = filterType;
+
+            document.querySelectorAll('.filter-chip').forEach(el => {
+                el.classList.remove('active');
+                if (el.innerText.toLowerCase().includes(filterType) || (filterType === 'all' && el.innerText === 'All')) {
+                    el.classList.add('active');
+                }
+            });
+
+            const cards = document.querySelectorAll(".suggestion-card");
+            cards.forEach(card => {
+                // console.log(card);
+                const severity = parseFloat(card.dataset.severity);
+                if(isdisplay(currentFilter,severity)) card.style.display="";
+                else card.style.display="none";
+            });
+
+            // if (displayList.length === 0) {
+            //     list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>此類別沒有建議 (No suggestions in this category).</p>";
+            //     return;
+            // }
         }
 
         function changeFrame(delta) {
