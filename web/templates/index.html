@@ -556,7 +556,9 @@
                 `;
                 list.appendChild(card);
             });
-            
+            const placeholder=document.createElement("div");
+            placeholder.innerHTML="<p id=suggestion-placeholder style='text-align:center; color:#666; padding:20px; display=none'>此類別沒有建議</p>";
+            list.appendChild(placeholder)
             list.addEventListener("click", (e) => {
                 const btn = e.target;
                 if (!btn.matches(".btn-accept, .btn-reject")) return;
@@ -620,19 +622,20 @@
                     el.classList.add('active');
                 }
             });
-
             const cards = document.querySelectorAll(".suggestion-card");
+            const placeholder = document.getElementById("suggestion-placeholder");
+            let isempty=1
             cards.forEach(card => {
                 // console.log(card);
                 const severity = parseFloat(card.dataset.severity);
-                if(isdisplay(currentFilter,severity)) card.style.display="";
+                if(isdisplay(currentFilter,severity)){
+                    card.style.display="";
+                    isempty=0;
+                }
                 else card.style.display="none";
             });
 
-            // if (displayList.length === 0) {
-            //     list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>此類別沒有建議 (No suggestions in this category).</p>";
-            //     return;
-            // }
+            placeholder.style.display=isempty ? "" : "none";
         }
 
         function changeFrame(delta) {
