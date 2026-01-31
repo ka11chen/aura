@@ -9,10 +9,10 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## autogen setup
+## Autogen setup
 - enter your api keys in .env file
 
-## instruct-pix2pix
+## Instruct-pix2pix setup
 
 install miniconda3
 
@@ -45,3 +45,11 @@ install PyTorch CUDA，pytorch-cuda <= driver CUDA Version
 pip uninstall torch torchvision torchaudio
 
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+```
+
+## Execute
+```bash
+cd web
+python app.py
+```
+Then visit http://localhost:5000
