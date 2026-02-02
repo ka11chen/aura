@@ -14,6 +14,7 @@ from _skeleton import *
 from landmarks_to_json import save_landmarks_to_file
 
 from edit_pose import run_pose_edit
+from evaluate import evaluate_pose
 
 app = Flask(__name__)
 
@@ -56,21 +57,35 @@ def gen_landmark(frame, idx):
     finally:
         done_cnt += 1
 
-def gen_modified_skel(idx):
-    print("modified skel:",idx)
-    global modified_skel, suggestion
-    filename = f"{SAVE_DIR}/frame_{idx}.jpg"
-    if not os.path.exists(filename):
-        print(f"gen_modified_skel: cannot find file {filename}") 
-        return
-    if idx not in modified_skel:
-        modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"])
-    return
-
 def gen_modified_skels():
-    global done_cnt
-    for i in range(done_cnt):
-        gen_modified_skel(i)
+    global done_cnt, modified_skel, suggestion
+
+    candidates = []
+
+    for idx in range(done_cnt):
+        print("modified skel:", idx)
+        filename = f"{SAVE_DIR}/frame_{idx}.jpg"
+        if not os.path.exists(filename):
+            print(f"gen_modified_skel: cannot find file {filename}")
+            return
+        if idx not in modified_skel:
+            new_skel = run_pose_edit(filename, suggestion[0]["suggestion"])
+            score = evaluate_pose(landmark_dict[idx], new_skel)
+            candidates.append({
+                "idx": idx,
+                "score": score,
+                "skeleton": new_skel
+            })
+
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+
+    tops = candidates[:3] # get top 3, can change later
+
+    modified_skel.clear()
+    for item in tops:
+        modified_skel[item["idx"]] = item["skeleton"]
+
+    return
 
 def gen_suggestion():
     global state, suggestion, judges
@@ -307,7 +322,7 @@ def add_judge():
         file_bytes = img.read()
         np_arr = np.frombuffer(file_bytes, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        filename=f"Judge_{name.replace(" ","_")}_{idx}.json"
+        filename=f"Judge_{name.replace(' ','_')}_{idx}.json"
         tmp=mp_landmark.get_landmark(frame)
         print(tmp)
         save_landmarks_to_file(tmp,filename,True)

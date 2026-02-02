@@ -18,7 +18,7 @@ async def main(judge_name):
         agent = load_agent_from_json("../agents/Judge.json")
 
         agent.label = judge
-        agent._name = f"Judge_{judge.replace(" ","_")}"
+        agent._name = f"Judge_{judge.replace(' ','_')}"
 
         judges.append(agent)
 
