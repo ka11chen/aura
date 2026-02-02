@@ -50,14 +50,10 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
     key_part_2 = "SESSION"
 
     task = (
-        f"Act as {judge_agent.label}. Your objective is to conduct a professional evaluation of the user (file: 'landmarks.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
+        f"Act as {judge_agent.label}. Your objective is to conduct a professional evaluation of the user (files: 'landmark_*.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
 
         "## LANDMARK ID REFERENCE\n"
         f"```\n{landmark_map}\n```\n\n"
-
-        "## DATA LOCATIONS\n"
-        "1. **User Data**: `landmarks.json` (Structure: A List of landmarks, where each landmark has 33 points, and each points has attribute 'x', 'y', 'z', 'visability')\n"
-        f"2. **Reference Data**: Folder `reference/` containing files like `{judge_agent.name}_1.json`, `{judge_agent.name}_2.json`.\n\n"
 
         "## OPERATIONAL PROTOCOL (STRICT SEQUENCE)\n"
         "You must execute the following phases in order. Do not skip steps.\n\n"
@@ -72,7 +68,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "1. Direct the 'Feature_Extractor' to write a Python script.\n"
         "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Give detialed instructions.\n"
         "3. **CRITICAL INSTRUCTIONS FOR THE SCRIPT**:\n"
-        f"   - **Load**: Read `landmarks.json` and ALL `{judge_agent.name}*.json` files in `reference/`.\n"
+        f"   - **Load**: Read all `landmark_*.json` in current directory and all `{judge_agent.name}_*.json` in `reference/`.\n"
         "   - **Robustness**: The script must handle data structure variations (e.g., check if landmarks are in a list or dictionary) to avoid KeyErrors.\n"
         "   - **Feature Function**: Implement the math defined in Phase 1 (e.g., `calculate_angle`).\n"
         "   - **Process Data**: \n"
@@ -87,7 +83,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
 
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
         "1. Wait for the JSON output. Compare all values in `user_value` against `ref_min` and `ref_max`. The order in the list represent the time.\n"
-        "2. Determine the `severity` score (int) using this RANGE-BASED RUBRIC:\n\n"
+        "2. Determine the `severity` score (int) and suggestion using this RANGE-BASED RUBRIC. Always mentions data in your suggestions:\n\n"
         
         "   --- JUDGMENT RUBRIC ---\n"
         
@@ -118,7 +114,7 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
         "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
 
-        "2. **Final Output**: You MUST output **Three JSON Objects** containing the fields below, followed by the termination keyword.\n"
+        "3. **Final Output**: You MUST output **Three JSON Objects** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "```json\n"
         "{"

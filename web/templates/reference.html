@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA - AI Understanding and Response of Actions</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --primary: #5e6ad2;
+            --primary-hover: #4e5ac0;
+            --card-bg: #1e1e1e;
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+        }
+        header {
+            padding: 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 0;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .finish-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .finish-buttons > * {
+            flex: 1;
+            height: 100%;
+        }
+        #judge-list {
+            flex-direction: column;
+            margin: 2rem;
+            gap: 30px;
+            width: 80%;
+        }
+        .judge-item {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            <h1>AURA</h1>
+            <div style="font-size: 0.8rem; color: #666;">AI Understanding and Response of Actions</div>
+        </div>
+        <a href="/">
+            <button class="outline">Return</button>
+        </a>
+    </header>
+    <h2 style="text-align: center;">Current Judges</h2>
+    <div id="judge-list">
+        <script>
+            function load_judge(){
+                const list=document.getElementById("judge-list");
+                list.innerHTML=""
+                fetch("/load_judge", { method: "POST" }).then(res => res.json()).then(data => {
+                    console.log(data)
+                    data.judges.forEach(judge => {
+                        const li = document.createElement("div");
+                        li.className = "judge-item";
+
+                        const span = document.createElement("span");
+                        span.textContent = judge;
+
+                        const delBtn = document.createElement("button");
+                        delBtn.className = "outline secondary";
+                        delBtn.textContent = "Delete";
+
+                        delBtn.addEventListener("click", async () => {
+                            const res = await fetch("/delete_judge", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ "judge": judge })
+                            });
+
+                            const data = await res.json();
+                            load_judge();
+                        });
+
+                        li.append(span, delBtn);
+                        list.appendChild(li);
+                    })
+                });
+            }
+            load_judge();
+        </script>
+    </div>
+    <dialog>
+        <form action="/add_judge" method="post" class="form-content" enctype="multipart/form-data">
+            <h2>Add custom judges</h2>
+            <div class="form-content">
+                <label for="name">Enter judge name: *</label>
+                <input type="text" name="name" id="name" required />
+            </div>
+            <div class="form-content">
+                <label for="image">Upload reference images: *</label>
+                <input type="file" id="fileInput" accept=".jpg, .png" name="refimg[]" multiple required>
+            </div>
+            <div class="finish-buttons">
+                <input type="submit" value="Upload" />
+                <button type="button" class="outline" id="dialog_close">Close</button>
+            </div>
+        </form>
+    </dialog>
+    <button>Add judges</button>
+    <script>
+        const dialog = document.querySelector("dialog");
+        const showButton = document.querySelector("dialog + button");
+        const closeButton = document.getElementById("dialog_close");
+
+        showButton.addEventListener("click", () => {
+        dialog.showModal();
+        });
+
+        closeButton.addEventListener("click", () => {
+        dialog.close();
+        });
+    </script>
+</body>

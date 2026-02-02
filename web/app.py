@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, jsonify, request
+from flask import Flask, render_template, Response, jsonify, request, redirect
 import cv2
 import time
 import os
@@ -11,6 +11,7 @@ from _autogen import main
 from _camera import VideoCamera
 from _landmark import landmark
 from _skeleton import *
+from landmarks_to_json import save_landmarks_to_file
 
 from edit_pose import run_pose_edit
 
@@ -37,18 +38,19 @@ judges=["Steve Jobs","Donald Trump"] # should enable user judge later
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-with open(PREFERENCE_FILE,'w') as f: # init preference
-    preference={i:1 for i in judges}
-    json.dump(preference,f)
+# with open(PREFERENCE_FILE,'w') as f: # init preference
+#     preference={i:1 for i in judges}
+#     json.dump(preference,f)
 
 def gen_landmark(frame, idx): 
-    global landmark_dict, done_cnt
+    global done_cnt, landmark_dict
     try:
         filename = f"{SAVE_DIR}/frame_{idx}.jpg"
         cv2.imwrite(filename, frame)
         
         ret = mp_landmark.get_landmark(frame)
-        landmark_dict[idx] = ret
+        landmark_dict[idx]=ret
+        save_landmarks_to_file(ret,f"landmark_{idx+1}.json")
     except Exception as e:
         print(f"gen_landmark Error: {e}")
     finally:
@@ -63,8 +65,6 @@ def gen_modified_skel(idx):
         return
     if idx not in modified_skel:
         modified_skel[idx]=run_pose_edit(filename, suggestion[0]["suggestion"])
-    # global landmark_dict
-    # modified_skel[idx]=landmark_dict[idx]
     return
 
 def gen_modified_skels():
@@ -73,15 +73,22 @@ def gen_modified_skels():
         gen_modified_skel(i)
 
 def gen_suggestion():
-    global state, suggestion, landmark_dict
-    landmark_list = [landmark_dict[i] for i in sorted(landmark_dict.keys())]
+    global state, suggestion, judges
     try:
-        raw_result = json.loads(asyncio.run(main(landmark_list)))
+        raw_result = json.loads(asyncio.run(main(judges)))
         # raw_result=[{"suggestion":"Narrow steeple fingertip gap","severity":3,"description":"Steve Jobs: Your fingertips are too wide—bring the index fingertips into a tight V and reduce fingertip distance toward ~0.12–0.34, especially at the beginning and end.","judge":"Steve Jobs"},{"suggestion":"Maintain consistent hand height","severity":1,"description":"Steve Jobs: Wrists start high then drop below chest—keep hands roughly 0.09–0.30 units above shoulder height throughout, particularly mid and late.","judge":"Steve Jobs"},{"suggestion":"Soften elbow angle to ~105°","severity":2,"description":"Steve Jobs: Elbows are over-extended (up to 132°); relax into a gentle ~105° bend so arms read open but not locked.","judge":"Steve Jobs"},{"suggestion":"Set hand-span to ~1.9× shoulder width","severity":3,"description":"Donald Trump: Your hand-span collapses then over-stretches—open to about 1.9× shoulder width at the start and hold that span consistently.","judge":"Donald Trump"},{"suggestion":"Hold steeple angle at 80–95°","severity":3,"description":"Donald Trump: Steeple angle is inconsistent (too sharp then too flat); form a controlled triangular steeple around 80–95° in the opening and maintain it.","judge":"Donald Trump"},{"suggestion":"Stand more upright; limit forward lean","severity":3,"description":"Donald Trump: You lean forward too much (torso angle drops below ~160°); adopt a near-vertical posture (~172°) and check mid-speech and near the close to avoid pitching forward.","judge":"Donald Trump"}]
         with open(PREFERENCE_FILE, 'r') as f:
             prefs = json.load(f)
-            for data in raw_result:
-                data["severity"]=round(data["severity"]*prefs[data["judge"]],2)
+
+        for data in raw_result:
+            judge = data["judge"]
+            if judge in prefs:
+                data["severity"] = round(data["severity"] * prefs[judge], 2)
+            else:
+                prefs[judge] = 1
+        
+        with open(PREFERENCE_FILE, 'w') as f:
+            json.dump(prefs, f, indent=2)
         suggestion = sorted(raw_result, key=lambda x: x["severity"],reverse=True)
 
     except Exception as e:
@@ -228,9 +235,12 @@ def upd_preference():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    global state, image_cnt, done_cnt
+    global state, image_cnt, done_cnt, landmark_dict, suggestion, modified_skel
     image_cnt = 0
     done_cnt = 0
+    landmark_dict.clear()
+    suggestion = []
+    modified_skel.clear()
     file = request.files.get("file")
     if not file:
         return "No file", 400
@@ -266,6 +276,43 @@ def upload():
     cap2.release()
     state = 10 # call gen_suggestion in big loop
     return {"status": "started"}
+
+@app.route("/reference")
+def reference():
+    return render_template("reference.html")
+
+@app.route("/load_judge", methods=["POST"])
+def load_judge():
+    global judges
+    print("load: ",judges)
+    return {"judges":judges}
+
+@app.route("/delete_judge", methods=["POST"])
+def delete_judge():
+    global judges
+    data = request.get_json()
+    judge = data.get("judge")
+    print("Deleting:", judge)
+    judges.remove(judge)
+    return jsonify(success=True)
+
+@app.route("/add_judge", methods=["POST"])
+def add_judge():
+    global judges
+    name = request.form.get("name")
+    files = request.files.getlist("refimg[]")
+    judges.append(name)
+    print("name:",name)
+    for idx,img in enumerate(files, start=1):
+        file_bytes = img.read()
+        np_arr = np.frombuffer(file_bytes, np.uint8)
+        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        filename=f"Judge_{name.replace(" ","_")}_{idx}.json"
+        tmp=mp_landmark.get_landmark(frame)
+        print(tmp)
+        save_landmarks_to_file(tmp,filename,True)
+
+    return redirect("/reference")
 
 if __name__ == "__main__":
     app.run(debug=True,use_reloader=False)
