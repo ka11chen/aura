@@ -385,6 +385,7 @@
             <div id="live-view-container">
                 <img id="main-video" src="{{ url_for('video_feed') }}" alt="Live Feed">
                 <div class="overlay-status" id="status-badge">準備就緒</div>
+                <button class="overlay-status" style="left: 10%;" onclick="switch_video_vis()">隱藏</button>
             </div>
 
             <div class="controls" id="start-controls">
@@ -451,9 +452,15 @@
         let allSuggestions = [];
         let currentFilter = 'all';
 
+        function switch_video_vis(){
+            const cur = document.getElementById('main-video');
+            if(cur.style.visibility == 'hidden') cur.style.visibility = 'visible';
+            else cur.style.visibility ='hidden';
+        }
+
         function startAnalysis() {
-            document.getElementById("Customize_judge").style.pointerEvents="none";
-            document.getElementById("Customize_judge_button").disabled=true;
+            document.getElementById("Customize_judge").style.pointerEvents = "none";
+            document.getElementById("Customize_judge_button").disabled = true;
             document.getElementById("btn-start").disabled = true;
             document.getElementById("status-badge").innerText = "正在捕捉 (Capturing)...";
 
