@@ -375,8 +375,8 @@
             <h1>AURA</h1>
             <div style="font-size: 0.8rem; color: #666;">AI Understanding and Response of Actions</div>
         </div>
-        <a href="reference">
-            <button class="outline secondary">Customize judge</button>
+        <a href="reference" id="Customize_judge">
+            <button class="outline secondary" id="Customize_judge_button">Customize judge</button>
         </a>
     </header>
 
@@ -452,6 +452,8 @@
         let currentFilter = 'all';
 
         function startAnalysis() {
+            document.getElementById("Customize_judge").style.pointerEvents="none";
+            document.getElementById("Customize_judge_button").disabled=true;
             document.getElementById("btn-start").disabled = true;
             document.getElementById("status-badge").innerText = "正在捕捉 (Capturing)...";
 
@@ -474,6 +476,8 @@
                 return res.json();
             })
             .then(() => {
+                document.getElementById("Customize_judge").style.pointerEvents="none";
+                document.getElementById("Customize_judge_button").disabled=true;
                 poller = setInterval(checkStatus, 1000);
             })
         }
