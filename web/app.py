@@ -35,13 +35,15 @@ done_cnt = 0
 landmark_dict = {}
 suggestion = []
 modified_skel = {}
-judges=["Steve Jobs","Donald Trump"] # should enable user judge later
+judges=["Steve Jobs","Donald Trump"]
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 # with open(PREFERENCE_FILE,'w') as f: # init preference
 #     preference={i:1 for i in judges}
 #     json.dump(preference,f)
+
+
 
 def gen_landmark(frame, idx): 
     global done_cnt, landmark_dict
@@ -60,7 +62,7 @@ def gen_landmark(frame, idx):
 def gen_modified_skels():
     global done_cnt, modified_skel, suggestion
 
-    candidates = []
+    print(landmark_dict.get(0))
 
     for idx in range(done_cnt):
         print("modified skel:", idx)
@@ -70,20 +72,19 @@ def gen_modified_skels():
             return
         if idx not in modified_skel:
             new_skel = run_pose_edit(filename, suggestion[0]["suggestion"])
-            score = evaluate_pose(landmark_dict[idx], new_skel)
-            candidates.append({
-                "idx": idx,
-                "score": score,
-                "skeleton": new_skel
-            })
+            score = evaluate_pose(landmark_dict.get(idx), new_skel)
+            print("idx: "+str(idx))
+            print("score: "+str(score))
+            if score >= 0.8:
+                modified_skel[idx] = new_skel
 
-    candidates.sort(key=lambda x: x["score"], reverse=True)
-
-    tops = candidates[:3] # get top 3, can change later
-
-    modified_skel.clear()
-    for item in tops:
-        modified_skel[item["idx"]] = item["skeleton"]
+    # candidates.sort(key=lambda x: x["score"], reverse=True)
+    #
+    # tops = candidates[:3] # get top 3, can change later
+    #
+    # modified_skel.clear()
+    # for item in tops:
+    #     modified_skel[item["idx"]] = item["skeleton"]
 
     return
 
