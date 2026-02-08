@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AURA - AI Understanding and Response of Actions</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <!-- <link rel="stylesheet"href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.conditional.min.css"> -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&icon_names=visibility,visibility_off" />
     <style>
         :root {
             --primary: #5e6ad2;
@@ -97,7 +99,9 @@
             backdrop-filter: blur(4px);
             font-weight: 600;
         }
-
+        #vis-button {
+            left: 10%;
+        }
         .controls {
             display: grid;
             grid-template-columns: 3fr 1fr 1fr 1.1fr 0.9fr;
@@ -385,7 +389,7 @@
             <div id="live-view-container">
                 <img id="main-video" src="{{ url_for('video_feed') }}" alt="Live Feed">
                 <div class="overlay-status" id="status-badge">準備就緒</div>
-                <button class="overlay-status" style="left: 10%;" onclick="switch_video_vis()">隱藏</button>
+                <button class="secondary overlay-status material-symbols-outlined" id="vis-button" onclick="switch_video_vis()">visibility</button>
             </div>
 
             <div class="controls" id="start-controls">
@@ -454,8 +458,15 @@
 
         function switch_video_vis(){
             const cur = document.getElementById('main-video');
-            if(cur.style.visibility == 'hidden') cur.style.visibility = 'visible';
-            else cur.style.visibility ='hidden';
+            const btn = document.getElementById('vis-button')
+            if(cur.style.visibility == 'hidden'){
+                cur.style.visibility = 'visible';
+                btn.innerText='visibility';
+            }
+            else{
+                cur.style.visibility ='hidden';
+                btn.innerText='visibility_off';
+            }
         }
 
         function startAnalysis() {
