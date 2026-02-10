@@ -62,7 +62,7 @@ def gen_landmark(frame, idx):
 def gen_modified_skels():
     global done_cnt, modified_skel, suggestion
 
-    print(landmark_dict.get(0))
+    # print(landmark_dict.get(0))
 
     good_idx = []
 
