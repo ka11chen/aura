@@ -11,6 +11,11 @@ def find_conda_env():
 
 
 def run_pose_edit(image_path, advice, output_path="../instruct-pix2pix/imgs/output.jpg"):
+    # # test
+    # test_frame = cv2.imread(output_path)
+    # return landmark().get_landmark(test_frame)
+
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     target_work_dir = os.path.abspath(os.path.join(current_dir, "../instruct-pix2pix"))
