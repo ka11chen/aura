@@ -1,4 +1,6 @@
 import math
+import random
+
 
 def get_pts(landmarks):
     pts = {}
@@ -20,6 +22,9 @@ def calc_dist(lm1, lm2):
 torso_indices = [11, 12, 23, 24]
 
 def evaluate_pose(original_landmarks, modified_landmarks):
+    # # test
+    # return random.uniform(0.5, 1.0)
+
     score = 1.0
     valid_points = 0
 

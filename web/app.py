@@ -64,6 +64,8 @@ def gen_modified_skels():
 
     print(landmark_dict.get(0))
 
+    good_idx = []
+
     for idx in range(done_cnt):
         print("modified skel:", idx)
         filename = f"{SAVE_DIR}/frame_{idx}.jpg"
@@ -77,6 +79,27 @@ def gen_modified_skels():
             print("score: "+str(score))
             if score >= 0.8:
                 modified_skel[idx] = new_skel
+                good_idx.append(idx)
+
+    # set absence modified_skel to the closest one
+    for i in range(len(good_idx)):
+        idx = good_idx[i]
+        if i == 0:
+            for j in range(idx):
+                modified_skel[j] = modified_skel[idx]
+                #print(j, idx)
+        else:
+            lst_idx = good_idx[i-1]
+            mid = (lst_idx + idx + 1) // 2
+            for j in range(lst_idx + 1, mid):
+                modified_skel[j] = modified_skel[lst_idx]
+                #print(j, lst_idx)
+            for j in range(mid, idx):
+                modified_skel[j] = modified_skel[idx]
+                #print(j, idx)
+    for i in range(good_idx[-1]+1, done_cnt):
+        modified_skel[i] = modified_skel[good_idx[-1]]
+        #print(i, good_idx[-1])
 
     # candidates.sort(key=lambda x: x["score"], reverse=True)
     #
