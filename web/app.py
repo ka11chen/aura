@@ -39,9 +39,9 @@ judges=["Steve Jobs","Donald Trump"]
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-# with open(PREFERENCE_FILE,'w') as f: # init preference
-#     preference={i:1 for i in judges}
-#     json.dump(preference,f)
+with open(PREFERENCE_FILE,'w') as f: # init preference
+    preference={i:1 for i in judges}
+    json.dump(preference,f)
 
 
 
@@ -60,62 +60,81 @@ def gen_landmark(frame, idx):
         done_cnt += 1
 
 def gen_modified_skels():
-    global done_cnt, modified_skel, suggestion
+    global done_cnt, modified_skel, suggestion, state
 
     # print(landmark_dict.get(0))
+    try:
+        good_idx = []
 
-    good_idx = []
+        for idx in range(done_cnt):
+            print("modified skel:", idx)
+            filename = f"{SAVE_DIR}/frame_{idx}.jpg"
+            if not os.path.exists(filename):
+                print(f"gen_modified_skel: cannot find file {filename}")
+                return
+            if idx not in modified_skel:
+                new_skel = run_pose_edit(filename, suggestion[0]["suggestion"])
+                score = evaluate_pose(landmark_dict.get(idx), new_skel)
+                print("idx: "+str(idx))
+                print("score: "+str(score))
+                if score >= 0.8:
+                    modified_skel[idx] = new_skel
+                    good_idx.append(idx)
 
-    for idx in range(done_cnt):
-        print("modified skel:", idx)
-        filename = f"{SAVE_DIR}/frame_{idx}.jpg"
-        if not os.path.exists(filename):
-            print(f"gen_modified_skel: cannot find file {filename}")
-            return
-        if idx not in modified_skel:
-            new_skel = run_pose_edit(filename, suggestion[0]["suggestion"])
-            score = evaluate_pose(landmark_dict.get(idx), new_skel)
-            print("idx: "+str(idx))
-            print("score: "+str(score))
-            if score >= 0.8:
-                modified_skel[idx] = new_skel
-                good_idx.append(idx)
+        # set absence modified_skel to the closest one
+        for i in range(len(good_idx)):
+            idx = good_idx[i]
+            if i == 0:
+                for j in range(idx):
+                    modified_skel[j] = modified_skel[idx]
+                    #print(j, idx)
+            else:
+                lst_idx = good_idx[i-1]
+                mid = (lst_idx + idx + 1) // 2
+                for j in range(lst_idx + 1, mid):
+                    modified_skel[j] = modified_skel[lst_idx]
+                    #print(j, lst_idx)
+                for j in range(mid, idx):
+                    modified_skel[j] = modified_skel[idx]
+                    #print(j, idx)
+        for i in range(good_idx[-1]+1, done_cnt):
+            modified_skel[i] = modified_skel[good_idx[-1]]
+            #print(i, good_idx[-1])
 
-    # set absence modified_skel to the closest one
-    for i in range(len(good_idx)):
-        idx = good_idx[i]
-        if i == 0:
-            for j in range(idx):
-                modified_skel[j] = modified_skel[idx]
-                #print(j, idx)
-        else:
-            lst_idx = good_idx[i-1]
-            mid = (lst_idx + idx + 1) // 2
-            for j in range(lst_idx + 1, mid):
-                modified_skel[j] = modified_skel[lst_idx]
-                #print(j, lst_idx)
-            for j in range(mid, idx):
-                modified_skel[j] = modified_skel[idx]
-                #print(j, idx)
-    for i in range(good_idx[-1]+1, done_cnt):
-        modified_skel[i] = modified_skel[good_idx[-1]]
-        #print(i, good_idx[-1])
-
-    # candidates.sort(key=lambda x: x["score"], reverse=True)
-    #
-    # tops = candidates[:3] # get top 3, can change later
-    #
-    # modified_skel.clear()
-    # for item in tops:
-    #     modified_skel[item["idx"]] = item["skeleton"]
-
+        # candidates.sort(key=lambda x: x["score"], reverse=True)
+        #
+        # tops = candidates[:3] # get top 3, can change later
+        #
+        # modified_skel.clear()
+        # for item in tops:
+        #     modified_skel[item["idx"]] = item["skeleton"]
+    finally:
+        state = 4
     return
+
+def normalize_preference():
+    global judges
+
+    with open(PREFERENCE_FILE, 'r') as f:
+        prefs = json.load(f)
+
+    prefs = {k: v for k, v in prefs.items() if k in judges}
+
+    mx = max(prefs.values(), default=0)
+    if mx == 0: mx = 1
+
+    for k in prefs:
+        prefs[k] /= mx
+
+    with open(PREFERENCE_FILE, 'w') as f:
+        json.dump(prefs, f, indent=2)
 
 def gen_suggestion():
     global state, suggestion, judges
     try:
         raw_result = json.loads(asyncio.run(main(judges)))
         # raw_result=[{"suggestion":"Narrow steeple fingertip gap","severity":3,"description":"Steve Jobs: Your fingertips are too wide—bring the index fingertips into a tight V and reduce fingertip distance toward ~0.12–0.34, especially at the beginning and end.","judge":"Steve Jobs"},{"suggestion":"Maintain consistent hand height","severity":1,"description":"Steve Jobs: Wrists start high then drop below chest—keep hands roughly 0.09–0.30 units above shoulder height throughout, particularly mid and late.","judge":"Steve Jobs"},{"suggestion":"Soften elbow angle to ~105°","severity":2,"description":"Steve Jobs: Elbows are over-extended (up to 132°); relax into a gentle ~105° bend so arms read open but not locked.","judge":"Steve Jobs"},{"suggestion":"Set hand-span to ~1.9× shoulder width","severity":3,"description":"Donald Trump: Your hand-span collapses then over-stretches—open to about 1.9× shoulder width at the start and hold that span consistently.","judge":"Donald Trump"},{"suggestion":"Hold steeple angle at 80–95°","severity":3,"description":"Donald Trump: Steeple angle is inconsistent (too sharp then too flat); form a controlled triangular steeple around 80–95° in the opening and maintain it.","judge":"Donald Trump"},{"suggestion":"Stand more upright; limit forward lean","severity":3,"description":"Donald Trump: You lean forward too much (torso angle drops below ~160°); adopt a near-vertical posture (~172°) and check mid-speech and near the close to avoid pitching forward.","judge":"Donald Trump"}]
+        normalize_preference()
         with open(PREFERENCE_FILE, 'r') as f:
             prefs = json.load(f)
 

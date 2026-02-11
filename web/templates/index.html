@@ -507,13 +507,16 @@
                 if (data.state == 1) {
                     statusBadge.innerText = `影像擷取中... (${data.total_frames || 0})`;
                 }
-                if (data.state == 2) {
-                    statusBadge.innerText = "Processing...";
+                else if (data.state == 2) {
+                    statusBadge.innerText = "計算建議...";
                     document.getElementById("live-view-container").style.opacity = "0.5";
                     document.getElementById("start-controls").style.display = "none";
                     document.getElementById("loader").style.display = "flex";
                 }
-                if (data.state == 3) {
+                else if (data.state == 3) {
+                    statusBadge.innerText = "生成骨架...";
+                }
+                else if (data.state == 4) {
                     finishAnalysis(data);
                 }
             });
