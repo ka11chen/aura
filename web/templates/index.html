@@ -470,8 +470,10 @@
         }
 
         function startAnalysis() {
+            // disable href link
             document.getElementById("Customize_judge").style.pointerEvents = "none";
             document.getElementById("Customize_judge_button").disabled = true;
+
             document.getElementById("btn-start").disabled = true;
             document.getElementById("status-badge").innerText = "正在捕捉 (Capturing)...";
 
@@ -479,16 +481,16 @@
             poller = setInterval(checkStatus, 1000);
         }
 
+        // upload files
         const fileInput = document.getElementById("fileInput");
-
         fileInput.onchange = () => {
-        const formData = new FormData();
-        formData.append("file", fileInput.files[0]);
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
 
-        fetch("/upload", {
-            method: "POST",
-            body: formData
-        })
+            fetch("/upload", {
+                method: "POST",
+                body: formData
+            })
             .then(res => {
                 if (!res.ok) throw new Error("upload error");
                 return res.json();
@@ -542,7 +544,7 @@
             const list = document.getElementById("suggestion-list");
             list.innerHTML = "";
 
-            let displayList = allSuggestions; //copy
+            let displayList = allSuggestions; // copy
             displayList.forEach((item, index) => {
                 const card = document.createElement("div");
 
@@ -633,9 +635,9 @@
             });
 
         }
-        function isdisplay(filterType, s){
-            currentFilter=filterType;
-            // console.log(filterType, s);
+        
+        // suggestion filter logic
+        function isdisplay(currentFilter, s){
             if (currentFilter === 'good') return s <= -0.5;
             if (currentFilter === 'warning') return 0.5 <= s && s < 2;
             if (currentFilter === 'critical') return 2 <= s;
@@ -643,15 +645,17 @@
             if (currentFilter === 'ignored') return -0.5 < s && s < 0.5;
             return true;
         }
-        function filterSuggestions(filterType) {
-            currentFilter = filterType;
-
+        
+        function filterSuggestions(currentFilter) {
+            // update filter button
             document.querySelectorAll('.filter-chip').forEach(el => {
                 el.classList.remove('active');
-                if (el.innerText.toLowerCase().includes(filterType) || (filterType === 'all' && el.innerText === 'All')) {
+                if (el.innerText.toLowerCase().includes(currentFilter)) {
                     el.classList.add('active');
                 }
             });
+
+            // update suggestion card
             const cards = document.querySelectorAll(".suggestion-card");
             const placeholder = document.getElementById("suggestion-placeholder");
             let isempty=1
@@ -665,6 +669,7 @@
                 else card.style.display="none";
             });
 
+            // if isempty then show the placefolder "此類別沒有建議"
             placeholder.style.display=isempty ? "" : "none";
         }
 
