@@ -4,8 +4,11 @@ uploads/
 
 # autogen
 web/.coding/*
+!web/.coding/reference/
+web/.coding/reference/*
 !web/.coding/reference/Judge_Donald_Trump_*
 !web/.coding/reference/Judge_Steve_Jobs_*
+!web/.coding/reference/Judge_Martin_Luther_King_Jr_*
 
 # py
 __pycache__/
