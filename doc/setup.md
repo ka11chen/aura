@@ -13,9 +13,10 @@ pip install -r requirements.txt
 - enter your api keys in .env file
 
 ## Instruct-pix2pix setup
+> The setup is for generating modified skeletons. 
+This requires CUDA; however, suggestion generation is still functional without this.
 
-install miniconda3
-
+- install miniconda3
 ```
 git clone https://github.com/timothybrooks/instruct-pix2pix.git
 
@@ -25,21 +26,21 @@ conda env create -f environment.yaml
 conda activate ip2p
 ```
 
-download http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt
+- download http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt
 
-put it to ./checkpoints/
+- put it to ./checkpoints/
 
 ```
 pip install --upgrade transformers
 ```
 
-check CUDA version
+- check CUDA version
 
 ```
 nvidia-smi
 ```
 
-install PyTorch CUDA，pytorch-cuda <= driver CUDA Version
+- install PyTorch CUDA，pytorch-cuda <= driver CUDA Version
 
 ```
 pip uninstall torch torchvision torchaudio

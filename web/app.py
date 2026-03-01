@@ -21,8 +21,8 @@ app = Flask(__name__)
 cap = VideoCamera()
 mp_landmark = landmark()
 
-CAPTURE_DURATION = 10
-SAVE_INTERVAL = 1
+CAPTURE_DURATION = 20
+SAVE_INTERVAL = 2
 SAVE_DIR = "captures"
 UPLOAD_DIR = "uploads"
 PREFERENCE_FILE = "user_preferences.json"
@@ -206,7 +206,6 @@ def status():
 
 @app.route("/update_preferences", methods=["POST"])
 def update_preferences():
-    from flask import request
     try:
         data = request.json
         if not isinstance(data, list):
@@ -373,6 +372,6 @@ def add_judge():
     return redirect("/reference")
 
 if __name__ == "__main__":
-    app.run(debug=True,use_reloader=False)
+    app.run(debug=True,use_reloader=False, port=5000)
     mp_landmark.shutdown()
     cap.shutdown()
