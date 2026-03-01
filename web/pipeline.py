@@ -16,7 +16,8 @@ async def run_pipeline(
         )
 
         print(f"{judge_agent.name} Done.")
-        return judge_agent.name, result
+        shortname=judge_agent.name[6:].replace("_",' ')
+        return shortname, result
 
     tasks = [process_single_judge(judge) for judge in judges]
 

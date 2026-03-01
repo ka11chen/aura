@@ -35,7 +35,7 @@ done_cnt = 0
 landmark_dict = {}
 suggestion = []
 modified_skel = {}
-judges=["Steve Jobs","Donald Trump"]
+judges=["Steve Jobs","Donald Trump","Martin Luther King Jr"]
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)

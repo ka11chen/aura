@@ -54,3 +54,4 @@ cd web
 python app.py
 ```
 Then visit http://localhost:5000
+> Sometimes this port is in used. If that happened change `app.run(..., port=5000)` in the end of app.py to other random port.
