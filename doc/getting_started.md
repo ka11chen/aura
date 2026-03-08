@@ -1,27 +1,30 @@
 # Welcome to **AURA**
 
-AURA is a tool for learning body language and presentation posture, based on feedback from multiple judges and user preferences.
-Suggestions are not generated directly by AI. Instead, each suggestion is computed from specific features associated with individual judges.
+AURA is a tool designed to help you master body language and presentation posture. Unlike standard AI tools, AURA doesn't generate generic advice; instead, it computes suggestions based on specific features associated with a panel of "judges" and your personal preferences.
 
-This programs use `flask`, `mediapipe` for motion tracking, `autogen` AI agents, and `instruct-pix2pix` for generating modified skeletons.
+This application uses `Flask` for the frontend, `MediaPipe` for motion tracking, `autogen` for AI agents, and `instruct-pix2pix` to generate modified skeletons.
+
 ## Pipeline
 
 ### Select reference
 - Use default judges.
-- (Or) Import your judges by uploading their names and reference images. 
+- (Or) Click `Customize Judge`. Import your judges by uploading their **names** and **reference images**.  
+    - Judge names must only contain English letters, numbers, and spaces.
+    - For best performance, the person in the reference photos should be facing the camera directly.
+    - It is recommended to have 3+ pictures with different (but common for the judge) postures to improve accuracy.
 
 ### Record
-- Press `開始錄製` button in the center. The program will record the camera for 30 seconds.
+- Click `開始錄製` in the center. The program will capture 20 seconds of footage.
     - The program will only value the pose, so speaking content is not important.
-- (Or) Upload an MP4 video.
+- (Or) Upload an MP4 video from your presentation / inteview.
 
 ### Suggestions
-- View suggestions given by different judges sorted by the severity.
-- You will see some frames of the recordings, the extracted skeleton of the images, and a suggested pose that best addresses the most severe problem.
+- View suggestions given by different judges sorted by the severity of the issue.
+- You will see some frames of the recordings, the extracted skeleton, and a suggested pose that best addresses the most critical issue.
 
 ### Feedback
-- Use the `Accept` and `Reject` button for each suggestions.
-- The feedback will change the weight of that judge, e.g., the suggestions given by that judge will be considered more/less important in future use.
+- You may use the `Accept` and `Reject` buttons for each suggestions.
+- Your feedback will adjust the weight of that judge, e.g., accepting a suggestion increases that judge's influence on future recommendations.
 
 ### Retry
-- Users are encouraged to use the website multiple times consecutively to find the suitble preference weights and improve their presentation performances. 
+- We encouraged you to use the tool multiple times consecutively to help the system find the suitble preference weights for you. We hope users can improve their body posture over time.
