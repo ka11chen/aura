@@ -104,12 +104,12 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "   - **Suggestion**: Specific, actionable physical correction. Mention timing. (e.g., 'Your hands are a bit too close together near the beginning. Try keeping them slightly wider apart to show more confidence.')\n\n"
         
         "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
-        "   - **Condition**: User is mostly (70%) OUTSIDE **2 Standard Deviations (2σ)**, but mostly remains inside 3σ.\n"
+        "   - **Condition**: User is mostly (70%) OUTSIDE **2 Standard Deviations (2σ)**, but sometimes remains inside 3σ.\n"
         "   - **Verdict**: **ERROR**. The movement is noticeably distracting or off-character.\n"
         "   - **Suggestion**: Specific, actionable physical correction. Mention timing. (e.g., 'You are leaning too far forward during most of the speech. Pull your back to a more vertical, upright position.')\n\n"
         
         "   **SEVERITY 3 (Critical Failure)**\n"
-        "   - **Condition**: User is frequently spending time OUTSIDE **3 Standard Deviations (3σ)** (or moving in the OPPOSITE direction of the norm).\n"
+        "   - **Condition**: User is mostly (70%) OUTSIDE **3 Standard Deviations (3σ)** (or moving in the OPPOSITE direction of the norm).\n"
         "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
         "   - **Suggestion**: Urgent, clear physical warning. (e.g., 'Your hand gestures are completely closed off. You need to open your arms much wider and maintain that stance throughout.')\n\n"
         
