@@ -1,12 +1,5 @@
 from agent_loader import load_agent_from_json
 from pipeline import run_pipeline
-# from landmarks_to_json import save_landmarks_to_file
-
-# judge_roster = [
-#     {"id": "Judge_Steve_Jobs", "target_figure": "Steve Jobs"},
-#     {"id": "Judge_Donald_Trump", "target_figure": "Donald Trump"},
-#     # {"id": "Judge_Elon_Musk", "target_figure": "Elon Musk"},
-# ]
 
 async def main(judge_name):
     # # test

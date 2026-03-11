@@ -50,23 +50,23 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
     key_part_2 = "SESSION"
 
     task = (
-        f"Act as {judge_agent.label}. Your objective is to conduct a professional evaluation of the user (files: 'landmark_*.json') by comparing them against the **Range and Consistency** of your GOLD STANDARD samples.\n\n"
+        f"Act as {judge_agent.label}. Your objective is to conduct a professional evaluation of the user (files: 'landmark_*.json') by comparing them against the **Distribution and Consistency** of your GOLD STANDARD samples.\n\n"
 
         "## LANDMARK ID REFERENCE\n"
         f"```\n{landmark_map}\n```\n\n"
-
+        
         "## OPERATIONAL PROTOCOL (STRICT SEQUENCE)\n"
         "You must execute the following phases in order. Do not skip steps.\n\n"
-
+        
         "**PHASE 1: RESEARCH & METRIC DEFINITION (Action: Search & Define Logic)**\n"
-        f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.label} (e.g., 'Steve Jobs steeple hand', 'Trump accordion hands').\n"
-        "2. **DEFINE METRIC**: Select THREE high-level concept and define the **MATHEMATICAL LOGIC**.\n"
+        f"1. **RESEARCH**: Use Google Search to find the specific body language habits of {judge_agent.label} (e.g., 'Steve Jobs steeple hand').\n"
+        "2. **DEFINE METRIC**: Select TWO high-level concept and define the **MATHEMATICAL LOGIC**.\n"
         "   - *Example*: 'Calculate the **Angle** of the elbow (points 11-13-15).'\n"
         "3. **SELECT**: List the specific Landmark IDs required.\n\n"
-
+        
         "**PHASE 2: FEATURE ENGINEERING COMMAND (Action: Instruct Engineer)**\n"
         "1. Direct the 'Feature_Extractor' to write a Python script.\n"
-        "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Give detialed instructions.\n"
+        "2. **RESTRICTION**: **DO NOT WRITE CODE YOURSELF.** You are the Manager. Give detailed instructions.\n"
         "3. **CRITICAL INSTRUCTIONS FOR THE SCRIPT**:\n"
         f"   - **Load**: Read all `landmark_*.json` in current directory and all `{judge_agent.name}_*.json` in `reference/`.\n"
         "   - **Robustness**: The script must handle data structure variations (e.g., check if landmarks are in a list or dictionary) to avoid KeyErrors.\n"
@@ -75,52 +75,51 @@ async def run_analysis_session(feature_extractor_agent, judge_agent):
         "       a. Compute the feature value for each frames for the user, and store them in a list.\n"
         "       b. Compute the feature value for each Reference file individually.\n"
         "   - **Calculate Statistics**: \n"
-        "       a. **Reference Range**: Find `min()` and `max()` of the reference averages.\n"
-        "       b. **Reference Mean**: Find `mean()` of the reference averages.\n"
+        "       a. **Reference Stats**: Find the `mean()` and standard deviation `std()` of the reference averages.\n"
+        "       b. **Minimum Floor Protection**: Ensure `std()` has a minimum safe value (e.g., `max(std, 2.0)` for angles, `max(std, 0.05)` for normalized distances) to prevent overly strict thresholds caused by zero-variance references.\n"
         "   - **Output**: The script **MUST print** one JSON string per feature:\n"
-        "     `{\"metric_name\": \"...\", \"user_value\": [88.5, 100.0, 70.0], \"ref_min\": 80.0, \"ref_max\": 100.0, \"ref_mean\": 90.0}`\n"
+        "     `{\"metric_name\": \"...\", \"user_value\": [88.5, 100.0, 70.0], \"ref_mean\": 90.0, \"ref_std\": 5.0}`\n"
         "4. **STOP** speaking immediately after giving the command.\n\n"
-
+        
         "**PHASE 3: VERDICT & TERMINATION (Action: Analyze)**\n"
-        "1. Wait for the JSON output. Compare all values in `user_value` against `ref_min` and `ref_max`. The order in the list represent the time.\n"
-        "2. Determine the `severity` score (int) and suggestion using this RANGE-BASED RUBRIC. Always mentions data in your suggestions:\n\n"
+        "1. Wait for the JSON output. Compare all values in `user_value` against `ref_mean` and `ref_std`. The order in the list represents the time.\n"
+        "2. Determine the `severity` score (int) and formulate a suggestion using this STANDARD DEVIATION RUBRIC.\n"
+        "   **CRITICAL CONSTRAINT: The `suggestion` will be shown directly to the user. You MUST translate the math into intuitive, actionable physical advice. DO NOT use statistical jargon (like sigma, standard deviation, variance, mean) or raw floating-point numbers in your output.**\n\n"
         
         "   --- JUDGMENT RUBRIC ---\n"
         
         "   **SEVERITY -2 (Perfect Match / Strength)**\n"
-        "   - **Condition**: User is always (100%) **INSIDE** the range (`ref_min` <= user <= `ref_max`) AND positioned near the center (Optimal).\n"
-        "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly.\n"
-        "   - **Suggestion**: High praise. (e.g., 'Your precision here is outstanding. This is exactly how it should look.')\n\n"
+        "   - **Condition**: User is always (100%) within **1 Standard Deviation (1σ)** of the mean (`ref_mean - 1*ref_std` <= user <= `ref_mean + 1*ref_std`).\n"
+        "   - **Verdict**: This is a **STRENGTH**. The user captures the essence perfectly and naturally.\n"
+        "   - **Suggestion**: High praise in plain language. (e.g., 'Your posture is outstanding and looks incredibly natural. This is exactly how it should look.')\n\n"
         
         "   **SEVERITY -1 (Acceptable / Minor Polish)**\n"
-        "   - **Condition**: User is mostly (70%) **INSIDE** the range, but sometimes outside the range.\n"
-        "   - **Verdict**: **PASS**. The behavior is professional and natural, though there is slight room for refinement.\n"
-        "   - **Suggestion**: Affirmation with a minor tip. Focus on the timing, use praises such as 'in the begin', or 'near middle' to describe time range; do not use 'frame' to describe time. (e.g., 'Good posture. You could relax your shoulders just a tiny bit more in the middle of your presentation in the end, but it works.')\n\n"
+        "   - **Condition**: User is mostly (70%) within **2 Standard Deviations (2σ)**, but occasionally fluctuates outside the 1σ zone.\n"
+        "   - **Verdict**: **PASS**. The behavior is professional, but slightly less consistent than the gold standard.\n"
+        "   - **Suggestion**: Affirmation with a minor physical tip. Focus on timing. (e.g., 'Good posture overall. You could relax your shoulders just a tiny bit more in the middle of your presentation, but it works well.')\n\n"
         
         "   **SEVERITY 1 (Noticeable Deviation / Warning)**\n"
-        "   - **Condition**: User is sometimes (40%) **OUTSIDE** the range, but most of the distances to the edge are **LESS than 1.0x** the `range_span`.\n"
-        "     *Formula*: `dist(user, edge) < range_span`\n"
-        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
-        "   - **Suggestion**: Specific correction. Also mentions the time range if needed. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
+        "   - **Condition**: User is sometimes (40%) OUTSIDE **2 Standard Deviations (2σ)**, but mostly remains inside 3σ.\n"
+        "   - **Verdict**: **ERROR**. The movement is noticeably distracting or off-character.\n"
+        "   - **Suggestion**: Specific, actionable physical correction. Mention timing. (e.g., 'Your hands are a bit too close together near the beginning. Try keeping them slightly wider apart to show more confidence.')\n\n"
         
         "   **SEVERITY 2 (Noticeable Deviation / Warning)**\n"
-        "   - **Condition**: User is mostly (70%) **OUTSIDE** the range, but most of the distances to the edge are **LESS than 1.0x** the `range_span`.\n"
-        "     *Formula*: `dist(user, edge) < range_span`\n"
-        "   - **Verdict**: **ERROR**. The movement is distracting or slightly off-character.\n"
-        "   - **Suggestion**: Specific correction. Also mentions the time range if needed. (e.g., 'You are leaning too far forward. Pull back to vertical.')\n\n"
+        "   - **Condition**: User is mostly (70%) OUTSIDE **2 Standard Deviations (2σ)**, but mostly remains inside 3σ.\n"
+        "   - **Verdict**: **ERROR**. The movement is noticeably distracting or off-character.\n"
+        "   - **Suggestion**: Specific, actionable physical correction. Mention timing. (e.g., 'You are leaning too far forward during most of the speech. Pull your back to a more vertical, upright position.')\n\n"
         
         "   **SEVERITY 3 (Critical Failure)**\n"
-        "   - **Condition**: User is mostly (70%) **OUTSIDE** the range, and most of the distances are **MORE than 1.0x** the `range_span` (or moving in OPPOSITE direction).\n"
+        "   - **Condition**: User is frequently spending time OUTSIDE **3 Standard Deviations (3σ)** (or moving in the OPPOSITE direction of the norm).\n"
         "   - **Verdict**: **CRITICAL**. The user completely fails the metric.\n"
-        "   - **Suggestion**: Urgent warning. (e.g., 'Stop! This is completely wrong. You must reset your stance immediately.')\n\n"
-
-        "3. **Final Output**: You MUST output **Three JSON Objects** containing the fields below, followed by the termination keyword.\n"
+        "   - **Suggestion**: Urgent, clear physical warning. (e.g., 'Your hand gestures are completely closed off. You need to open your arms much wider and maintain that stance throughout.')\n\n"
+        
+        "3. **Final Output**: You MUST output **Two JSON Objects** containing the fields below, followed by the termination keyword.\n"
         "   **Required JSON Structure**:\n"
         "```json\n"
         "{"
         "\"metric_analyzed\": \"(e.g. Elbow Angle)\","
         "\"severity\": (-2, -1 or 1, 2, 3),"
-        "\"suggestion\": \"(Write your advice here based on the data difference)\""
+        "\"suggestion\": \"(Plain English physical advice. NO math, NO sigma, NO raw numbers. Tell the user exactly how to adjust their body.)\""
         "}"
         "```\n"
         f"3. ONLY THEN, output the exact keyword consisting of '{key_part_1}' and '{key_part_2}' joined by an underscore.\n\n"
