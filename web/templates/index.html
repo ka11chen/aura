@@ -521,6 +521,7 @@
                     document.getElementById("loader").style.display = "flex";
                 }
                 else if (data.state == 4 || hasSkipped) {
+                    hasSkipped=false;
                     finishAnalysis(data);
                 }
                 else if (data.state == 3) {
