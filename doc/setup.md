@@ -10,7 +10,7 @@ pip install -r requirements.txt
 ```
 
 ## Autogen setup
-- enter your api keys in .env file
+- enter your api keys in .env file (See `.env.example`)
 
 ## Instruct-pix2pix setup
 > The setup is for generating modified skeletons. 
