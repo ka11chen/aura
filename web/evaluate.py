@@ -28,8 +28,15 @@ def evaluate_pose(original_landmarks, modified_landmarks):
     score = 1.0
     valid_points = 0
 
-    pts_orig = get_pts(original_landmarks.pose_landmarks[0])
-    pts_mod = get_pts(modified_landmarks.pose_landmarks[0])
+    try:
+        pts_orig = get_pts(original_landmarks.pose_landmarks[0])
+    except:
+        return -100
+
+    try:
+        pts_mod = get_pts(modified_landmarks.pose_landmarks[0])
+    except:
+        return -100
 
     for idx in torso_indices:
         p_orig = pts_orig[idx]
