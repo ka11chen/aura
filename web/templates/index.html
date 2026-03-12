@@ -400,6 +400,7 @@
                 <input type="file" id="fileInput" accept=".mp4" name="file" hidden>
                 <button class="secondary-btn" onclick="fileInput.click()">(OR) 上傳影片</button>
             </div>
+            <button id="skip-state" class="outline secondary" onclick="skipstate()" style="display: none;">跳過骨架生成</button>
             <div id="loader" aria-busy="true">分析中...</div>
         </section>
 
@@ -502,7 +503,10 @@
                 poller = setInterval(checkStatus, 1000);
             })
         }
-
+        let hasSkipped = false;
+        function skipstate(){
+            hasSkipped=true;
+        }
         function checkStatus() {
             fetch("/status").then(res => res.json()).then(data => {
                 const statusBadge = document.getElementById("status-badge");
@@ -516,12 +520,14 @@
                     document.getElementById("start-controls").style.display = "none";
                     document.getElementById("loader").style.display = "flex";
                 }
-                else if (data.state == 3) {
-                    statusBadge.innerText = "生成骨架...";
-                }
-                else if (data.state == 4) {
+                else if (data.state == 4 || hasSkipped) {
                     finishAnalysis(data);
                 }
+                else if (data.state == 3) {
+                    statusBadge.innerText = "生成骨架...";
+                    document.getElementById("skip-state").style.display = "flex"; 
+                }
+
             });
         }
 
