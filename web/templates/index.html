@@ -308,6 +308,7 @@
             line-height: 1.6;
             color: #ccc;
             white-space: pre-wrap;
+            display: none;
         }
 
         .sev-ignored {
@@ -475,7 +476,7 @@
             document.getElementById("Customize_judge_button").disabled = true;
 
             document.getElementById("btn-start").disabled = true;
-            document.getElementById("status-badge").innerText = "正在捕捉 (Capturing)...";
+            document.getElementById("status-badge").innerText = "正在捕捉...";
 
             fetch("/start_capture", { method: "POST" });
             poller = setInterval(checkStatus, 1000);
@@ -587,6 +588,18 @@
                     <div class="suggestion-desc">${item.description}</div>
                 `;
                 list.appendChild(card);
+                card.addEventListener('click', (e) => {
+                    // Check if the click was on a button so we don't toggle when accepting/rejecting
+                    if (e.target.tagName === 'BUTTON') return;
+
+                    const desc = card.querySelector('.suggestion-desc');
+                    
+                    if (desc.style.display === 'block') {
+                        desc.style.display = 'none';
+                    } else {
+                        desc.style.display = 'block';
+                    }
+                });
             });
             const placeholder=document.createElement("div");
             placeholder.innerHTML="<p id=suggestion-placeholder style='text-align:center; color:#666; padding:20px; display=none'>此類別沒有建議</p>";

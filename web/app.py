@@ -21,6 +21,7 @@ app = Flask(__name__)
 cap = VideoCamera()
 mp_landmark = landmark()
 
+WAIT_DURATION = 3
 CAPTURE_DURATION = 20
 SAVE_INTERVAL = 2
 SAVE_DIR = "captures"
@@ -171,13 +172,16 @@ def gen_frames():
         now = time.time()
 
         if state == 1:
-            if now - last_saved_time >= SAVE_INTERVAL and now - start_time <= CAPTURE_DURATION:
+            if now - start_time >= WAIT_DURATION \
+                and now - last_saved_time >= SAVE_INTERVAL \
+                and now - start_time <= CAPTURE_DURATION:
+
                 last_saved_time = now
                 current_idx = image_cnt
                 image_cnt += 1
                 threading.Thread(target=gen_landmark, args=(frame.copy(), current_idx), daemon=True).start()
 
-            if now - start_time >= CAPTURE_DURATION:
+            if now - start_time > CAPTURE_DURATION + WAIT_DURATION:
                 state=10 # so that /upload can use
         
         if state == 10:
